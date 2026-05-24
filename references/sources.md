@@ -94,9 +94,31 @@ Filter: `upvotes >= 3` (configurable via `min_hf_upvotes`).
 
 ## HackerNews
 
-Two parallel searches via HN Algolia API, filtered to last 24h:
-1. `ai agent` — agent-specific stories
-2. `LLM OR GPT OR Claude OR Gemini` — broader AI coverage
+**Mode: `ai-only` (default) or `frontpage`** — controlled by `config.yaml` `hn.mode`.
+
+- `ai-only`: Two searches via HN Algolia API, filtered to last 24h:
+  1. `ai agent` — agent-specific stories
+  2. `LLM OR GPT OR Claude OR Gemini` — broader AI coverage
+- `frontpage`: Fetch top 30 stories from HN front page via `https://hacker-news.firebaseio.com/v0/topstories.json`, plus any `extra_queries`
+
+Extra queries (from config) are always appended regardless of mode.
+
+## General Tech (Optional, via config)
+
+Non-AI tech community sources. Enabled when `general_tech.enabled: true` in config.
+
+| Source | URL | Method | Notes |
+|--------|-----|--------|-------|
+| V2EX | `https://www.v2ex.com/` | Jina Reader | Chinese dev community, hot topics |
+| V2EX Tech | `https://www.v2ex.com/?tab=tech` | Jina Reader | Tech-specific tab |
+| Linux Today | `https://www.linuxtoday.com/` | Jina Reader | Linux news aggregator |
+| LWN.net | `https://lwn.net/headlines/newrss` | RSS | In-depth Linux/open-source |
+
+**Processing:**
+- Fetch all sources in parallel alongside other categories
+- Filter to last 24h (same as HN)
+- Output as a separate `## General Tech` section in the digest, after AI sections
+- Keep items concise: title + 1-line summary + link
 
 ## User Config (Optional)
 

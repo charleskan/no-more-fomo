@@ -63,10 +63,30 @@ curl -s "https://huggingface.co/api/daily_papers?limit=20"
 ```
 
 **HackerNews:**
+
+Check `config.yaml` for `hn.mode`. Default is `ai-only`.
+
 ```bash
+# ai-only mode (default):
 YESTERDAY=$(python3 -c "import time; print(int(time.time()) - 86400)")
 curl -s "https://hn.algolia.com/api/v1/search?query=ai+agent&tags=story&numericFilters=created_at_i%3E$YESTERDAY&hitsPerPage=20"
 curl -s "https://hn.algolia.com/api/v1/search?query=LLM+OR+GPT+OR+Claude+OR+Gemini&tags=story&numericFilters=created_at_i%3E$YESTERDAY&hitsPerPage=15"
+
+# frontpage mode:
+curl -s "https://hacker-news.firebaseio.com/v0/topstories.json" | python3 -c "import json,sys; ids=json.load(sys.stdin)[:30]; print('\n'.join(str(i) for i in ids))" | xargs -I{} curl -s "https://hacker-news.firebaseio.com/v0/item/{}.json"
+```
+
+Always append `extra_queries` from config (e.g. "Linux"):
+```bash
+curl -s "https://hn.algolia.com/api/v1/search?query=Linux&tags=story&numericFilters=created_at_i%3E$YESTERDAY&hitsPerPage=10"
+```
+
+**General Tech (if `general_tech.enabled: true` in config):**
+```bash
+curl -s "https://r.jina.ai/https://www.v2ex.com/"
+curl -s "https://r.jina.ai/https://www.v2ex.com/?tab=tech"
+curl -s "https://r.jina.ai/https://www.linuxtoday.com/"
+curl -s "https://r.jina.ai/https://lwn.net/headlines/newrss"
 ```
 
 ## Step 2: Parse & Extract
@@ -124,6 +144,7 @@ Extract: title, authors (first 3), abstract (first 2 sentences).
 | 行业动态 | Industry | Company announcements, funding, policy |
 | HF 热门论文 | HF Trending Papers | HuggingFace community-upvoted papers |
 | arxiv: [主题] | arxiv: [Topic] | Per-topic arxiv search results |
+| 通用技术 | General Tech | V2EX hot, Linux news, non-AI HN (if enabled) |
 | 发现 | Discovery | Phase 2: s.jina.ai web search results |
 
 ## Step 6: Format & Output
