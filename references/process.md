@@ -2,7 +2,17 @@
 
 ## Prerequisites
 
-- **xreach** (`npm i -g xreach-cli`) — Twitter/X data. Requires auth: `xreach auth`
+- **twscrape** (`pipx install twscrape` + `pipx inject twscrape curl-cffi`) — Twitter/X
+  data via X's internal API. Binary at `~/.local/bin/twscrape`. **Always run with
+  `DO_NOT_TRACK=1`** to disable its anonymous PostHog telemetry. Use a BURNER account.
+  - **Cookie auth is the reliable path** (password/`login_accounts` login is usually
+    Cloudflare-blocked). Log the burner into x.com in a browser, copy the `auth_token`
+    and `ct0` cookies, then:
+    `DO_NOT_TRACK=1 twscrape add_cookie "handle" "auth_token=…; ct0=…"`
+  - Verify: `DO_NOT_TRACK=1 twscrape --db "$HOME/accounts.db" accounts` shows
+    `active=1`; a test `twscrape --db "$HOME/accounts.db" search "from:karpathy" --limit 3`
+    returns tweets.
+  - Cookies expire (weeks–months) → re-add when searches start returning nothing.
 - **curl** — RSS feeds and HN API (standard on all systems)
 - **Jina Reader** — free, no auth needed (`https://r.jina.ai/URL`)
 - **baoyu-youtube-transcript** (optional) — podcast transcript download. Path: `~/.claude/plugins/ljg-skills/.agents/skills/baoyu-youtube-transcript`. Falls back to yt-dlp.
@@ -13,29 +23,54 @@
 
 Launch ALL fetches in parallel. **First read `~/.no-more-fomo/config.yaml` if it exists, then merge with defaults.**
 
-**CRITICAL — Filter at fetch time.** Pipe xreach output through jq to keep only relevant tweets (~30KB → ~2KB/account).
+**Twitter/X via twscrape — one search command covers all three source types.**
+Everything goes through `twscrape search "<X advanced-search query>" --limit N`, so
+accounts, hashtags, and domains use the SAME mechanism. Always prefix `DO_NOT_TRACK=1`.
 
-**xreach JSON structure (verified):**
-- Top-level keys: `items`, `cursor`, `hasMore` (NOT `data.items`)
-- Each item: `{id, text, createdAt, likeCount, retweetCount, isQuote, isRetweet, isReply, user, media, ...}`
-- **NO `entities.urls` field** — URLs appear as t.co links within `text`
-- `id` — tweet ID string, construct URL: `https://x.com/HANDLE/status/ID`
-- `createdAt` — format: `"Tue Mar 24 16:56:24 +0000 2026"`
+**CRITICAL — always pass `--db "$HOME/accounts.db"`.** twscrape's account DB is
+resolved RELATIVE TO THE CURRENT DIRECTORY. Without an explicit `--db`, a run from a
+different CWD (cron, another folder) finds no accounts, silently creates an empty
+`accounts.db`, and returns **0 tweets** — the X section vanishes with no error. Pin the
+absolute path so it works regardless of where the skill runs.
+
+Build the query with X's advanced-search operators + a 24h `since:` window:
 
 ```bash
-# Template for each account — filters to last 24h:
-CUTOFF=$(date -u -v-24H +"%Y-%m-%dT%H:%M:%S" 2>/dev/null || date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%S")
-xreach tweets @HANDLE --json -n N | jq --arg cutoff "$CUTOFF" '[.items[] | select(.isRetweet==false or .isQuote==true) | select(.createdAt | strptime("%a %b %d %H:%M:%S %z %Y") | strftime("%Y-%m-%dT%H:%M:%S") > $cutoff) | {id,text: .text[:300],createdAt,likeCount,retweetCount,isQuote}]'
+export PATH="$HOME/.local/bin:$PATH"
+DB="$HOME/accounts.db"     # absolute — the logged-in burner lives here, CWD-independent
+SINCE=$(date -u -v-1d +%Y-%m-%d 2>/dev/null || date -u -d "1 day ago" +%Y-%m-%d)
+
+# (a) A KOL's timeline (originals + quotes, no plain replies):
+DO_NOT_TRACK=1 twscrape --db "$DB" search "from:karpathy since:$SINCE -filter:replies" --limit 20
+
+# (b) A hashtag / topic (config: tags):
+DO_NOT_TRACK=1 twscrape --db "$DB" search "#LLM since:$SINCE min_faves:50" --limit 30
+
+# (c) Posts linking a specific domain (config: domains):
+DO_NOT_TRACK=1 twscrape --db "$DB" search "url:arxiv.org since:$SINCE min_faves:100" --limit 30
 ```
 
-**Batching (4 batches to avoid rate limits):**
-- Batch 1: High volume (@_akhaliq -n50, @dotey -n30)
-- Batch 2: KOLs (karpathy, bcherny, oran_ge, trq212, swyx, emollick)
-- Batch 3: More KOLs (drjimfan, simonw, hardmaru, ylecun)
-- Batch 4: Company accounts (cursor_ai, AnthropicAI, OpenAI, GoogleDeepMind)
-- Tier 2 (only with `--full`): xai, WindsurfAI, cognition, replit, huggingface, llama_index
+Run these in parallel (many `twscrape search` calls at once). Combine operators freely,
+e.g. `from:_akhaliq since:$SINCE min_faves:50`.
 
-**Rate limiting:** xreach may return `"Rate limit exceeded"` after ~15 accounts. Wait 10s and retry.
+**Rate-limit budget (IMPORTANT).** X throttles the search endpoint per account (~15-min
+window) — and the budget is shared with anything else querying through the same account.
+Keep it modest: **≤ ~10 `twscrape search` calls per run**
+(e.g. top ~8 KOLs + 1 domain + 1 tag), and prefer combined queries
+(`(from:a OR from:b OR from:c)`) over one call per handle. If searches start blocking
+(`No account available … Next available at …`), the account is throttled — wait out the
+window or add a 2nd burner so twscrape auto-rotates.
+
+**twscrape output (JSON, one tweet per line by default):**
+- Key fields: `id`, `url` (already a full `https://x.com/user/status/…` — no t.co, no
+  reconstruction needed), `date`, `rawContent`, `likeCount`, `retweetCount`,
+  `user.username`. Add `--raw` only if you need the unparsed GraphQL response.
+- URLs inside `rawContent` are already expanded — no t.co resolution step.
+- Filter to last 24h at query time via `since:`; apply `min_faves:` for quality.
+
+**Batching / rate limits:** twscrape handles rate-limit waiting and multi-account
+rotation internally, so you can fire all searches in parallel. If a burner account gets
+locked, `twscrape relogin_failed` (or add another burner) recovers it.
 
 **AI Lab Blogs:**
 ```bash
@@ -91,13 +126,10 @@ curl -s "https://r.jina.ai/https://lwn.net/headlines/newrss"
 
 ## Step 2: Parse & Extract
 
-- Items at `.items[]` (NOT `.data.items[]`)
-- No `entities.urls` — URLs are t.co links inside `text`
-- Construct tweet links: `https://x.com/HANDLE/status/ID`
-
-**URL extraction from tweet text:**
-1. Regex extract `https://t.co/\w+` from `text`
-2. Resolve via `curl -sI URL | grep -i location`
+- twscrape emits one JSON tweet per line: use `url` (already the full
+  `https://x.com/user/status/…` link), `rawContent`, `date`, `likeCount`,
+  `retweetCount`, `user.username`
+- URLs inside `rawContent` are already expanded — no t.co resolution step
 
 **Every digest item MUST have at least one clickable link.**
 
@@ -171,10 +203,10 @@ Print concise summary:
 |---------|-----|
 | Including all retweets | Only quote tweets with commentary |
 | Sequential fetching | ALL fetches must be parallel |
-| Using `.data.items[]` for xreach | Correct: `.items[]` |
-| Using `.entities.urls` for xreach | Does not exist. Use `.id` for tweet links |
+| Omitting `--db` with twscrape | Always `--db "$HOME/accounts.db"` — else a run from another CWD silently returns 0 tweets |
+| Reconstructing tweet URLs | twscrape's `url` field is already the full link — use it |
 | Items without reference links | Every item needs at least one `[link](URL)` |
 | Highlights without links | 今日要点 MUST end with `\| [link](URL)` |
 | Ignoring dedup | Same URL from Twitter + HN = one entry |
-| xreach rate limiting | Use 4 batches, retry after 10s |
+| One `twscrape search` per handle | Combine: `(from:a OR from:b OR from:c)` — stay inside the per-account search budget |
 | Repeating yesterday's headlines | Read previous day's .md, exclude duplicates |

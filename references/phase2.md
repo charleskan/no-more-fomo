@@ -19,7 +19,9 @@ bun ~/.claude/plugins/ljg-skills/.agents/skills/baoyu-youtube-transcript/scripts
 **Topic Search** (if `topic_search.enabled`, default true):
 For each hot topic from step 6.5 (max 5):
 ```bash
-xreach search "TOPIC_NAME" --type top -n 15 --json
+SINCE=$(date -u -v-1d +%Y-%m-%d 2>/dev/null || date -u -d "1 day ago" +%Y-%m-%d)
+DO_NOT_TRACK=1 twscrape --db "$HOME/accounts.db" search "TOPIC_NAME min_faves:50 since:$SINCE" --limit 15
+# counts against the same per-account search budget — keep topics ≤ 5
 ```
 
 **Discovery** (if `discovery.enabled`, default true):

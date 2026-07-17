@@ -133,12 +133,21 @@ cat ~/.no-more-fomo/config.yaml 2>/dev/null
 ```yaml
 # ~/.no-more-fomo/config.yaml
 
-twitter:
+twitter:                        # fetched via twscrape (X advanced search)
   add:                          # Extra accounts to follow
     - handle: "@elonmusk"
       count: 15
   remove:                       # Accounts to skip from defaults
     - "@ylecun"
+  tags:                         # Hashtags / topics to search (→ search "#tag")
+    - query: "#LLM"
+      min_faves: 50
+    - query: "#AIagents"
+  domains:                      # Posts linking these domains (→ search "url:domain")
+    - domain: "arxiv.org"
+      min_faves: 100
+    - domain: "github.com"
+      min_faves: 50
 
 papers:
   topics:                       # arxiv topic searches

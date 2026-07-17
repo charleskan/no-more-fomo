@@ -118,7 +118,7 @@ git clone https://github.com/freemty/no-more-fomo.git ~/.claude/skills/no-more-f
 
 ### Prerequisites
 
-- [xreach](https://github.com/nicepkg/xreach) (`npm i -g xreach-cli`) — Twitter/X data
+- [twscrape](https://github.com/vladkens/twscrape) (`pipx install twscrape` + `pipx inject twscrape curl-cffi`) — Twitter/X data (needs a logged-in burner account, see `references/process.md`)
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp) — podcast transcripts (optional)
 - [baoyu-youtube-transcript](https://github.com/nicepkg/xreach) (optional) — enhanced podcast transcript processing
 - [bun](https://bun.sh) — runtime for youtube-transcript (optional)

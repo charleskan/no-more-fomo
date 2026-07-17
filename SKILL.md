@@ -50,10 +50,13 @@ Full process details: `references/process.md` and `references/phase2.md`.
 
 - Every digest item MUST have at least one clickable `[link](URL)`
 - ALL fetches must be parallel (never sequential)
-- xreach JSON: `.items[]` (not `.data.items[]`), no `.entities.urls` field
-- Construct tweet links from `.id`: `https://x.com/HANDLE/status/ID`
+- Twitter/X via **twscrape** — always `DO_NOT_TRACK=1 twscrape --db "$HOME/accounts.db"`
+  (telemetry off; `--db` absolute so a run from any CWD finds the logged-in account —
+  omitting it silently returns 0 tweets)
+- All X sources use ONE tool: `twscrape search "<query>" --limit N` — accounts
+  (`from:handle`), hashtags (`#tag`), and domains (`url:domain.com`), each with
+  `since:$YESTERDAY`; twscrape output already has full `url` (no t.co reconstruction)
 - Dedup against previous day's digest
-- Rate limit: batch Twitter into 4 groups, retry after 10s
 
 ## Scheduling
 
@@ -63,6 +66,8 @@ Full process details: `references/process.md` and `references/phase2.md`.
 
 ## Fallback
 
-- xreach fails → `curl -s "https://r.jina.ai/https://twitter.com/HANDLE"`
+- twscrape returns nothing / account locked → `twscrape relogin_failed`, or skip the
+  X section for the day (note it in the digest footer). Last resort:
+  `curl -s "https://r.jina.ai/https://twitter.com/HANDLE"` (often blocked by X)
 - HN API fails → `curl -s "https://r.jina.ai/https://news.ycombinator.com"`
 - Podcast RSS fails → `curl -s "https://r.jina.ai/PODCAST_WEBSITE"`
