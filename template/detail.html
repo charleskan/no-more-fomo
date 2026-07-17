@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{DETAIL_TITLE}} — 白话详解</title>
+  <title>{{DETAIL_TITLE}} — {{L10N:explainerKicker}}</title>
   <style>
     :root, [data-theme="light"] {
       --bg: #f6f4f0; --surface: #ffffff; --surface-warm: #faf8f4;
@@ -101,10 +101,10 @@
 <body>
   <div class="header">
     <div class="header-top">
-      <a href="{{DETAIL_DIGEST_LINK}}" class="back-link" data-zh="← 返回摘要" data-en="← Back to digest">← 返回摘要</a>
+      <a href="{{DETAIL_DIGEST_LINK}}" class="back-link" {{L10N_ATTRS:backToDigest}}>{{L10N:backToDigest}}</a>
       <div class="controls">
         <button class="theme-btn" onclick="toggleTheme()">🌓</button>
-        <button class="lang-btn" onclick="toggleLang()">中/EN</button>
+        <button class="lang-btn" onclick="toggleLang()">{{L10N_LANG_TOGGLE}}</button>
       </div>
     </div>
   </div>
@@ -124,15 +124,30 @@
       html.setAttribute('data-theme', next);
       try { localStorage.setItem('fomo-theme', next); } catch(e) {}
     }
+    var LOCALES = {{L10N_LOCALES}};
+    function splitLocale(base) {
+      for (var i = 0; i < LOCALES.length; i++) {
+        var suf = LOCALES[i].suffix;
+        if (suf && base.length > suf.length && base.slice(-suf.length) === suf)
+          return { idx: i, stem: base.slice(0, -suf.length) };
+      }
+      for (var j = 0; j < LOCALES.length; j++)
+        if (LOCALES[j].suffix === '') return { idx: j, stem: base };
+      return { idx: 0, stem: base };
+    }
     function toggleLang() {
-      var f = window.location.pathname.split('/').pop();
-      if (f.match(/-zh--/)) window.location.href = f.replace(/-zh--/, '--');
-      else window.location.href = f.replace(/--/, '-zh--');
+      var f = window.location.pathname.split('/').pop().replace(/\.html$/, '');
+      var m = f.match(/^(.*?)--(.*)$/);
+      var base = m ? m[1] : f;
+      var rest = m ? '--' + m[2] : '';
+      var cur = splitLocale(base);
+      var next = LOCALES[(cur.idx + 1) % LOCALES.length];
+      window.location.href = './' + cur.stem + next.suffix + rest + '.html';
     }
     function setLang(lang) {
       document.documentElement.setAttribute('data-lang', lang);
-      document.querySelectorAll('[data-zh][data-en]').forEach(function(el) {
-        el.textContent = el.getAttribute('data-' + lang);
+      document.querySelectorAll('[data-en]').forEach(function(el) {
+        el.textContent = el.getAttribute('data-' + lang) || el.getAttribute('data-en');
       });
       try { localStorage.setItem('fomo-lang', lang); } catch(e) {}
     }

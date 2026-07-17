@@ -1,25 +1,26 @@
 #!/usr/bin/env node
 // Usage: bun scripts/render-details.js ~/no-more-fomo/2026-07-09-zh-details.md
-// One authored markdown holds a "白话详解" section per news item; this emits
+// One authored markdown holds an explainer section per news item; this emits
 // ONE standalone detail page per item: <base>--<slug>.html
 // Each page = three-question beginner explanation, with the source ref link(s)
 // shown next to the title. Slug = the item's English title in kebab-case.
 //
-// Authored markdown format:
+// Authored markdown format (zh digests use the Chinese headings and 信号:):
 //   # (ignored page title)
 //   ## <Item title> {#english-slug}
-//   kicker: 模型与发布            (optional — section label shown above title)
-//   ref: [OpenAI 公告](url) · [HN](url)
-//   ### 这是在讲什么?
+//   kicker: Models & Releases   (optional — section label shown above title)
+//   ref: [OpenAI announcement](url) · [HN](url)
+//   ### What's this about?
 //   ...prose / lists / > quotes ...
-//   ### <term> 到底是什么?
+//   ### What exactly is <term>?
 //   ...
-//   ### 网友都在讨论什么?
-//   信号: HN 636 分、422 则留言
+//   ### What's the community saying?
+//   Signal: HN 636 points, 422 comments
 //   1. ...
 
 const fs = require('fs');
 const path = require('path');
+const { LOCALES, localeFromBase, applyL10n } = require('./l10n.js');
 
 const mdPath = process.argv[2];
 if (!mdPath || !/-details\.md$/.test(mdPath)) {
@@ -33,7 +34,8 @@ const templatePath = path.join(repoDir, 'template', 'detail.html');
 const outputDir = path.dirname(path.resolve(mdPath));
 
 const base = path.basename(mdPath).replace(/-details\.md$/, '');   // e.g. 2026-07-09-zh
-const isZh = /-zh$/.test(base);
+const lang = localeFromBase(base);
+const T = LOCALES[lang];
 const digestLink = `./${base}.html`;
 
 function esc(s) {
@@ -83,6 +85,10 @@ for (const raw of lines) {
 }
 if (cur) items.push(cur);
 
+// A signal line may be labelled in any locale's language (信号: / Signal: / …)
+const SIGNAL_RE = new RegExp(
+  '^\\s*(?:' + Object.values(LOCALES).map(l => l.signalLabel).join('|') + ')[:：]\\s*(.+)$');
+
 // --- Render one item's body markdown → HTML ---
 function renderBody(bodyLines) {
   let html = '';
@@ -91,7 +97,7 @@ function renderBody(bodyLines) {
   const closeQuote = () => { if (inQuote) { html += `</blockquote>\n`; inQuote = false; } };
   for (const line of bodyLines) {
     if (line.startsWith('### ')) { closeList(); closeQuote(); html += `<h2>${inlineFmt(line.slice(4).trim())}</h2>\n`; continue; }
-    const sig = line.match(/^\s*(?:信号|Signal)[:：]\s*(.+)$/);
+    const sig = line.match(SIGNAL_RE);
     if (sig) { closeList(); closeQuote(); html += `<div class="signal">${inlineFmt(sig[1])}</div>\n`; continue; }
     if (/^>\s?/.test(line)) { closeList(); if (!inQuote) { html += `<blockquote>\n`; inQuote = true; } html += `${inlineFmt(line.replace(/^>\s?/, ''))}<br>\n`; continue; }
     if (inQuote && line.trim() === '') { closeQuote(); continue; }
@@ -106,8 +112,7 @@ function renderBody(bodyLines) {
   return html;
 }
 
-const template = fs.readFileSync(templatePath, 'utf-8');
-const backLabel = isZh ? '返回摘要' : 'digest';
+const template = applyL10n(fs.readFileSync(templatePath, 'utf-8'), lang);
 
 items.forEach((it, i) => {
   const refsHtml = it.refs.map(r =>
@@ -119,10 +124,10 @@ items.forEach((it, i) => {
   const nextHtml = next ? `<a href="./${base}--${next.slug}.html">${esc(next.title)} →</a>` : `<span></span>`;
 
   const html = template
-    .replace(/\{\{DETAIL_LANG\}\}/g, isZh ? 'zh' : 'en')
+    .replace(/\{\{DETAIL_LANG\}\}/g, lang)
     .replace(/\{\{DETAIL_TITLE\}\}/g, esc(it.title))
     .replace('{{DETAIL_DIGEST_LINK}}', digestLink)
-    .replace('{{DETAIL_KICKER}}', esc(it.kicker || (isZh ? '白话详解' : 'Explainer')))
+    .replace('{{DETAIL_KICKER}}', esc(it.kicker || T.explainerKicker))
     .replace('{{DETAIL_REFS}}', refsHtml)
     .replace('{{DETAIL_BODY}}', renderBody(it.body))
     .replace('{{DETAIL_PREVNEXT}}', prevHtml + nextHtml);

@@ -78,7 +78,7 @@ Read `~/no-more-fomo/YYYY-MM-DD.md` and apply:
 ## Step C2: Write per-item detail pages (default ON, skip with `--no-brief`)
 
 **Every** news item gets its own clickable **detail page** — the three-question
-"白话详解" for that single item, with the source ref link(s) beside the title.
+explainer for that single item, with the source ref link(s) beside the title.
 This covers highlights AND every section item (dedupe: the same news appearing in
 two sections shares ONE slug/page).
 
@@ -93,30 +93,33 @@ Reuse the same slug for the same news across sections.
 **(b) Author `YYYY-MM-DD[-zh]-details.md`** — one block per UNIQUE item:
 
 ```markdown
-# 白话详解 — YYYY-MM-DD        <!-- ignored page title -->
+# Explainers — YYYY-MM-DD       <!-- ignored page title -->
 
-## OpenAI 发布 GPT-Live {#gpt-live}
-kicker: 模型与发布                          <!-- optional section label above title -->
-ref: [OpenAI 公告](url) · [HN 讨论](url)     <!-- source links, shown beside the title -->
-### 这是在讲什么?
+## OpenAI releases GPT-Live {#gpt-live}
+kicker: Models & Releases                   <!-- optional section label above title -->
+ref: [OpenAI announcement](url) · [HN thread](url)  <!-- source links, shown beside the title -->
+### What's this about?
 <1–3 plain sentences>
-### 「语音模型」到底是什么?
+### What exactly is a "voice model"?
 <define the one term from scratch, everyday analogy>
-### 网友都在讨论什么?
-信号: HN NNN 分、NNN 则留言                   <!-- one-line signal → green badge -->
+### What's the community saying?
+Signal: HN NNN points, NNN comments         <!-- one-line signal → green badge -->
 1. <discussion topic>
 2. <discussion topic>
 3. <discussion topic>
-<!-- if no discussion signal, replace Q3 with "为什么值得注意?" + significance -->
+<!-- if no discussion signal, replace Q3 with "Why does it matter?" + significance -->
 
 ## <next unique item> {#slug}
 ...
 ```
 
 Rules:
+- The zh file uses Chinese headings (这是在讲什么? / 「XXX」到底是什么? /
+  网友都在讨论什么? / 为什么值得注意?) and `信号:` for the signal line — the
+  renderer accepts both `Signal:` and `信号:`.
 - Depth scales with signal: items with real HN/community discussion get the full
-  three questions incl. a numbered "网友都在讨论什么"; long-tail papers get
-  这是在讲什么 / 术语是什么 / 为什么值得注意 (2–4 sentences each).
+  three questions incl. a numbered "what's the community saying"; long-tail papers
+  get what's-this-about / the-one-term / why-it-matters (2–4 sentences each).
 - Every `## ` slug MUST also appear as a `{#slug}` on the matching digest item(s),
   or that item won't link. Conversely every slug used in the digest MUST have a
   block here, or the link 404s.
@@ -138,8 +141,12 @@ Verify after rendering: no leftover `{#slug}` text in the digest HTML, and every
 Features:
 - Three view layouts: newspaper (default), sidebar, grid
 - Light/dark theme with system preference
-- `中/EN` button navigates between `.html` ↔ `-zh.html`
-- render.js supports both English AND Chinese section headings
+- The language button cycles through the locales registered in `scripts/l10n.js`
+  (default en ↔ zh, navigating `.html` ↔ `-zh.html`)
+- All chrome/UI strings come from `scripts/l10n.js` — to support another
+  language, add a locale entry there plus its section names in
+  `scripts/render.js` `SECTIONS`, and generate `YYYY-MM-DD<suffix>.md` digests
+- render.js matches section headings in any registered language
 
 For `--quick` mode: run this at end of Phase 1.
 
