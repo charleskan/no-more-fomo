@@ -165,6 +165,25 @@ Print concise summary:
 - New podcast episodes
 - Any `[RELEVANT]` items
 
+## Step 9: Deploy to S3 (optional — only if configured, skip with `--no-deploy`)
+
+If the user configured a bucket (`deploy.s3` in `~/.no-more-fomo/config.yaml`, or a
+`BUCKET` env var), publish the HTML as the very last step of the run so the digest
+is readable anywhere:
+
+```bash
+BUCKET=<bucket> AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> \
+  bash /path/to/no-more-fomo/scripts/deploy-s3.sh
+```
+
+This syncs `~/no-more-fomo/*.html` to the S3 static-website bucket. Then include
+today's live URL in the summary, e.g.
+`http://<bucket>.s3-website-<region>.amazonaws.com/YYYY-MM-DD.html`.
+
+Skip when `--no-deploy` or `--no-save`, or when no bucket is configured. If the
+deploy fails, report the error but keep the run successful — the local files are
+still generated.
+
 ## Common Mistakes
 
 | Mistake | Fix |
