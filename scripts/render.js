@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { LOCALES, localeFromBase, swapAttrs, applyL10n } = require('./l10n.js');
 
 const mdPath = process.argv[2];
 if (!mdPath) {
@@ -41,25 +42,23 @@ function inlineFmt(text) {
   return result;
 }
 
-// Section title zh/en mapping — shared refs to avoid copy-paste drift
+// Section title mapping — shared refs to avoid copy-paste drift.
+// To support another language, add its name to each entry; a heading with no
+// name for the page language falls back to the heading as written in the md.
 const SECTIONS = [
-  { zh: '今日要点', en: 'Top Highlights', id: 'highlights' },
-  { zh: '模型与发布', en: 'Models & Releases', id: 'models' },
-  { zh: '工具与演示', en: 'Tools & Demos', id: 'tools' },
-  { zh: 'AI Agents', en: 'AI Agents', id: 'agents' },
-  { zh: '实验室动态', en: 'Lab Updates', id: 'labs' },
-  { zh: '播客', en: 'Podcasts', id: 'podcasts' },
-  { zh: 'HN 讨论', en: 'HN Threads', id: 'hn' },
-  { zh: '行业动态', en: 'Industry', id: 'industry' },
-  { zh: 'HF 热门论文', en: 'HF Trending Papers', id: 'hf-papers' },
+  { id: 'highlights', names: { en: 'Top Highlights', zh: '今日要点' } },
+  { id: 'models', names: { en: 'Models & Releases', zh: '模型与发布' } },
+  { id: 'tools', names: { en: 'Tools & Demos', zh: '工具与演示' } },
+  { id: 'agents', names: { en: 'AI Agents', zh: 'AI Agents' } },
+  { id: 'labs', names: { en: 'Lab Updates', zh: '实验室动态' } },
+  { id: 'podcasts', names: { en: 'Podcasts', zh: '播客' } },
+  { id: 'hn', names: { en: 'HN Threads', zh: 'HN 讨论' } },
+  { id: 'industry', names: { en: 'Industry', zh: '行业动态' } },
+  { id: 'hf-papers', names: { en: 'HF Trending Papers', zh: 'HF 热门论文' } },
 ];
-const sectionMap = Object.fromEntries(
-  SECTIONS.flatMap(s => {
-    const entries = [[s.en, s]];
-    if (s.zh !== s.en) entries.push([s.zh, s]);
-    return entries;
-  })
-);
+const sectionMap = {};
+for (const s of SECTIONS)
+  for (const name of new Set(Object.values(s.names))) sectionMap[name] = s;
 // Also match common alternate headings
 sectionMap['Podcasts (Last 7 Days)'] = sectionMap['Podcasts'];
 sectionMap['播客 (近 7 天)'] = sectionMap['播客'];
@@ -71,14 +70,14 @@ function matchSection(heading) {
   if (heading.startsWith('arxiv:')) {
     const topic = heading.slice(6).trim();
     const id = 'arxiv-' + topic.toLowerCase().replace(/\s+/g, '-');
-    return { zh: heading, en: heading, id };
+    return { names: { en: heading }, id };
   }
   // Fuzzy
   for (const [key, val] of Object.entries(sectionMap)) {
     if (heading.includes(key)) return val;
   }
   const id = heading.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  return { zh: heading, en: heading, id };
+  return { names: { en: heading }, id };
 }
 
 // --- Parse Markdown ---
@@ -170,40 +169,55 @@ function parseMd(md) {
 
 // --- Render HTML fragments ---
 
+// Every news item carries a trailing `{#slug}` marker in the digest markdown,
+// pointing at its own per-item detail page: <DETAILS_BASE>--<slug>.html
+let DETAILS_BASE = '';   // e.g. ./2026-07-09-zh
+
+function extractSlug(raw) {
+  const m = raw.match(/\s*\{#([a-z0-9-]+)\}\s*$/);
+  if (m) return { slug: m[1], raw: raw.replace(/\s*\{#[a-z0-9-]+\}\s*$/, '') };
+  return { slug: null, raw };
+}
+function detailHref(slug) { return `${DETAILS_BASE}--${slug}.html`; }
+
 function renderItem(item) {
-  const raw = item.raw;
+  const ex = extractSlug(item.raw);
+  const raw = ex.raw;
+  const linked = ex.slug && DETAILS_BASE;
+  const href = linked ? detailHref(ex.slug) : null;
+  const titleWrap = (t) => linked
+    ? `<a class="item-detail-title" href="${href}">${esc(t)}</a>`
+    : esc(t);
+  const detailBtn = linked
+    ? `<a class="item-detail" href="${href}" ${swapAttrs('explainerChip')}>${esc(T.explainerChip)}</a>`
+    : '';
   let html = `<div class="item">`;
 
   // Parse: **Title** — description | links | @source | NL
   const titleMatch = raw.match(/^\*\*([^*]+)\*\*\s*[—–-]\s*(.*)/);
   if (titleMatch) {
-    html += `<div class="item-title">${esc(titleMatch[1])}</div>`;
+    html += `<div class="item-title">${titleWrap(titleMatch[1])}</div>`;
     const rest = titleMatch[2];
-    // Split by | for meta parts
     const parts = rest.split('|').map(p => p.trim());
     const desc = parts[0] || '';
     html += `<div class="item-desc">${inlineFmt(desc)}</div>`;
-    if (parts.length > 1) {
-      const metaParts = parts.slice(1).map(p => {
-        // @handle → badge
-        if (p.match(/^@\w+/)) return `<span class="badge badge-source">${esc(p)}</span>`;
-        // HN Npts → green badge
-        if (p.match(/HN \d+/)) return `<span class="badge badge-green">${esc(p)}</span>`;
-        // [link](url) → link
-        if (p.match(/\[.*\]\(.*\)/)) return `<span class="item-links">${inlineFmt(p)}</span>`;
-        return esc(p);
-      });
-      html += `<div class="item-meta">${metaParts.join(' ')}</div>`;
-    }
+    const metaParts = parts.slice(1).map(p => {
+      if (p.match(/^@\w+/)) return `<span class="badge badge-source">${esc(p)}</span>`;
+      if (p.match(/HN \d+/)) return `<span class="badge badge-green">${esc(p)}</span>`;
+      if (p.match(/\[.*\]\(.*\)/)) return `<span class="item-links">${inlineFmt(p)}</span>`;
+      return esc(p);
+    });
+    if (detailBtn) metaParts.push(detailBtn);
+    if (metaParts.length) html += `<div class="item-meta">${metaParts.join(' ')}</div>`;
   } else {
-    // Simple format: **Title** rest
     const simpleMatch = raw.match(/^\*\*([^*]+)\*\*\s*(.*)/);
     if (simpleMatch) {
-      html += `<div class="item-title">${esc(simpleMatch[1])}</div>`;
+      html += `<div class="item-title">${titleWrap(simpleMatch[1])}</div>`;
       if (simpleMatch[2]) html += `<div class="item-desc">${inlineFmt(simpleMatch[2])}</div>`;
     } else {
       html += `<div class="item-desc">${inlineFmt(raw)}</div>`;
     }
+    if (detailBtn) html += `<div class="item-meta">${detailBtn}</div>`;
   }
 
   // Blockquote (podcast summary or HN context)
@@ -216,23 +230,38 @@ function renderItem(item) {
 }
 
 function renderHighlights(section) {
-  let html = `<div class="highlights-title" data-zh="今日要点" data-en="Today's Highlights">今日要点</div>`;
+  let html = `<div class="highlights-title" ${swapAttrs('highlightsTitle')}>${esc(T.highlightsTitle)}</div>`;
   html += `<ol>`;
-  for (const item of section.items) {
-    html += `<li>${inlineFmt(item.raw)}</li>`;
-  }
+  section.items.forEach((item) => {
+    const ex = extractSlug(item.raw);
+    const inner = inlineFmt(ex.raw);
+    if (ex.slug && DETAILS_BASE) {
+      html += `<li><a class="hl-detail" href="${detailHref(ex.slug)}">${inner}</a></li>`;
+    } else {
+      html += `<li>${inner}</li>`;
+    }
+  });
   html += `</ol>`;
   return html;
+}
+
+function sectionName(meta, heading) {
+  return meta.names[lang] || heading;
+}
+function sectionAttrs(meta, extra = '') {
+  return Object.entries(meta.names)
+    .map(([c, n]) => `data-${c}="${esc(n)}${extra}"`)
+    .join(' ');
 }
 
 function renderSection(section) {
   const { meta, isWide } = section;
   const wideClass = isWide ? ' wide' : '';
   let html = `<div class="section${wideClass}" id="${meta.id}">`;
-  html += `<div class="section-header" data-zh="${esc(meta.zh)}" data-en="${esc(meta.en)}">${esc(meta.zh)} <span class="section-count">${section.items.length}</span></div>`;
+  html += `<div class="section-header" ${sectionAttrs(meta)}>${esc(sectionName(meta, section.heading))} <span class="section-count">${section.items.length}</span></div>`;
 
   if (section.items.length === 0) {
-    html += `<div class="item-empty" data-zh="暂无内容" data-en="No items">暂无内容</div>`;
+    html += `<div class="item-empty" ${swapAttrs('noItems')}>${esc(T.noItems)}</div>`;
   } else {
     for (const item of section.items) {
       html += renderItem(item);
@@ -246,7 +275,7 @@ function renderSection(section) {
 function renderSidebarNav(sections) {
   return sections
     .filter(s => s.meta.id !== 'highlights')
-    .map(s => `<a href="#${s.meta.id}" data-zh="${esc(s.meta.zh)}(${s.items.length})" data-en="${esc(s.meta.en)}(${s.items.length})">${esc(s.meta.zh)}(${s.items.length})</a>`)
+    .map(s => `<a href="#${s.meta.id}" ${sectionAttrs(s.meta, `(${s.items.length})`)}>${esc(sectionName(s.meta, s.heading))}(${s.items.length})</a>`)
     .join('\n      ');
 }
 
@@ -257,16 +286,27 @@ const template = fs.readFileSync(templatePath, 'utf-8');
 
 const dateMatch = path.basename(mdPath).match(/(\d{4}-\d{2}-\d{2})/);
 const date = dateMatch ? dateMatch[1] : 'unknown';
-const isZh = path.basename(mdPath).includes('-zh');
+const lang = localeFromBase(path.basename(mdPath).replace(/\.md$/, ''));
+const T = LOCALES[lang];
 
 // Compute all available dates for date nav
 const allDates = fs.readdirSync(outputDir)
   .filter(f => /^\d{4}-\d{2}-\d{2}\.html$/.test(f))
   .map(f => f.replace('.html', ''))
   .sort();
+// The current date's .html is written LATER in this run, so it isn't on disk yet —
+// include it explicitly, else today's digest is missing from its own index / date-nav.
+if (date !== 'unknown' && !allDates.includes(date)) {
+  allDates.push(date);
+  allDates.sort();
+}
 const currentIdx = allDates.indexOf(date);
 const prevDate = currentIdx > 0 ? allDates[currentIdx - 1] : null;
 const nextDate = currentIdx < allDates.length - 1 ? allDates[currentIdx + 1] : null;
+
+// Per-item detail pages live at <base>--<slug>.html; items link to them.
+const base = path.basename(mdPath).replace(/\.md$/, '');   // e.g. 2026-07-09-zh
+DETAILS_BASE = `./${base}`;
 
 const sections = parseMd(md);
 const highlightsSection = sections.find(s => s.meta.id === 'highlights');
@@ -283,7 +323,7 @@ const metaText = totalItems;
 
 // Build date nav HTML
 function buildDateNav() {
-  const dateUrl = d => `./${d}${isZh ? '-zh' : ''}.html`;
+  const dateUrl = d => `./${d}${T.suffix}.html`;
   const prevLink = prevDate
     ? `<a href="${dateUrl(prevDate)}" class="date-nav-btn">← ${prevDate}</a>`
     : `<span class="date-nav-btn disabled">← </span>`;
@@ -299,9 +339,9 @@ function buildDateNav() {
   return `${prevLink}<div class="date-chips">${dateBtns}</div>${nextLink}`;
 }
 
-const html = template
+const html = applyL10n(template, lang)
   .replace(/\{\{DIGEST_DATE\}\}/g, date)
-  .replace(/\{\{DIGEST_LANG\}\}/g, isZh ? 'zh' : 'en')
+  .replace(/\{\{DIGEST_LANG\}\}/g, lang)
   .replace(/\{\{DIGEST_META\}\}/g, esc(metaText))
   .replace('{{DIGEST_HIGHLIGHTS}}', highlightsSection ? renderHighlights(highlightsSection) : '')
   .replace('{{DIGEST_SIDEBAR_NAV}}', renderSidebarNav(contentSections))

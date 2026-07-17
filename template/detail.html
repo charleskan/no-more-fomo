@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html data-theme="light" data-lang="{{DETAIL_LANG}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{DETAIL_TITLE}} — {{L10N:explainerKicker}}</title>
+  <style>
+    :root, [data-theme="light"] {
+      --bg: #f6f4f0; --surface: #ffffff; --surface-warm: #faf8f4;
+      --border: #ddd6c8; --border-subtle: #ebe6dc;
+      --text: #1a1612; --text-secondary: #4a4035; --text-muted: #8a7d6b;
+      --accent: #9a6c1e; --accent-hover: #7a5516; --accent-subtle: rgba(154,108,30,0.08);
+      --green: #2d7a45; --green-subtle: rgba(45,122,69,0.08);
+      --shadow-sm: 0 1px 2px rgba(26,22,18,0.04);
+      --shadow-md: 0 2px 8px rgba(26,22,18,0.06), 0 1px 2px rgba(26,22,18,0.04);
+      --radius: 10px; --radius-sm: 6px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      --font-mono: "SF Mono", Menlo, "Cascadia Code", "Fira Code", monospace;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1114; --surface: #1e2228; --surface-warm: #242830;
+      --border: #2e343e; --border-subtle: #262c35;
+      --text: #e8eaf0; --text-secondary: #a0a8b8; --text-muted: #606878;
+      --accent: #c4b08a; --accent-hover: #dbc8a0; --accent-subtle: rgba(196,176,138,0.1);
+      --green: #5cb87a; --green-subtle: rgba(92,184,122,0.1);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 2px 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans); background: var(--bg); color: var(--text);
+      line-height: 1.75; min-height: 100vh;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    a { color: var(--accent); text-decoration: none; transition: color .15s ease; }
+    a:hover { color: var(--accent-hover); }
+
+    .header {
+      border-bottom: 1px solid var(--border); padding: 12px 24px;
+      position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(12px);
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+    .header-top {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 720px; margin: 0 auto; gap: 12px;
+    }
+    .back-link { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    .controls button {
+      font-family: var(--font-sans); font-size: 13px; cursor: pointer;
+      background: var(--surface-warm); color: var(--text-secondary);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 6px 12px; transition: all .15s ease;
+    }
+    .controls button:hover { border-color: var(--accent); color: var(--accent); }
+
+    main { max-width: 720px; margin: 0 auto; padding: 32px 24px 40px; }
+
+    .kicker {
+      font-family: var(--font-mono); font-size: 12px; color: var(--accent);
+      letter-spacing: .04em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 20px; }
+    h1 { font-size: 26px; font-weight: 750; letter-spacing: -0.015em; line-height: 1.3; }
+    .refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .ref-link {
+      font-family: var(--font-mono); font-size: 12px;
+      background: var(--accent-subtle); color: var(--accent);
+      border: 1px solid var(--border); border-radius: 999px; padding: 3px 11px;
+      white-space: nowrap; transition: all .15s ease;
+    }
+    .ref-link:hover { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+
+    article h2 {
+      font-size: 15px; font-weight: 700; color: var(--accent);
+      margin: 26px 0 8px; padding-left: 11px; border-left: 3px solid var(--accent);
+    }
+    article p { margin: 10px 0; color: var(--text-secondary); }
+    article p strong, article li strong { color: var(--text); font-weight: 650; }
+    article ol, article ul { margin: 8px 0 8px 4px; padding-left: 22px; }
+    article li { margin: 7px 0; color: var(--text-secondary); }
+    article blockquote {
+      border-left: 3px solid var(--green); background: var(--green-subtle);
+      border-radius: var(--radius-sm); padding: 12px 16px; margin: 14px 0;
+      color: var(--text-secondary); font-size: 14px;
+    }
+    .signal {
+      display: inline-block; font-family: var(--font-mono); font-size: 12px;
+      color: var(--green); background: var(--green-subtle);
+      border-radius: var(--radius-sm); padding: 2px 9px; margin: 4px 0;
+    }
+    .prevnext {
+      display: flex; justify-content: space-between; gap: 12px;
+      margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 13px; font-family: var(--font-mono);
+    }
+    .prevnext span { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-top">
+      <a href="{{DETAIL_DIGEST_LINK}}" class="back-link" {{L10N_ATTRS:backToDigest}}>{{L10N:backToDigest}}</a>
+      <div class="controls">
+        <button class="theme-btn" onclick="toggleTheme()">🌓</button>
+        <button class="lang-btn" onclick="toggleLang()">{{L10N_LANG_TOGGLE}}</button>
+      </div>
+    </div>
+  </div>
+  <main>
+    <div class="kicker">{{DETAIL_KICKER}}</div>
+    <div class="title-row">
+      <h1>{{DETAIL_TITLE}}</h1>
+      <div class="refs">{{DETAIL_REFS}}</div>
+    </div>
+    <article>{{DETAIL_BODY}}</article>
+    <div class="prevnext">{{DETAIL_PREVNEXT}}</div>
+  </main>
+  <script>
+    function toggleTheme() {
+      var html = document.documentElement;
+      var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      try { localStorage.setItem('fomo-theme', next); } catch(e) {}
+    }
+    var LOCALES = {{L10N_LOCALES}};
+    function splitLocale(base) {
+      for (var i = 0; i < LOCALES.length; i++) {
+        var suf = LOCALES[i].suffix;
+        if (suf && base.length > suf.length && base.slice(-suf.length) === suf)
+          return { idx: i, stem: base.slice(0, -suf.length) };
+      }
+      for (var j = 0; j < LOCALES.length; j++)
+        if (LOCALES[j].suffix === '') return { idx: j, stem: base };
+      return { idx: 0, stem: base };
+    }
+    function toggleLang() {
+      var f = window.location.pathname.split('/').pop().replace(/\.html$/, '');
+      var m = f.match(/^(.*?)--(.*)$/);
+      var base = m ? m[1] : f;
+      var rest = m ? '--' + m[2] : '';
+      var cur = splitLocale(base);
+      var next = LOCALES[(cur.idx + 1) % LOCALES.length];
+      window.location.href = './' + cur.stem + next.suffix + rest + '.html';
+    }
+    function setLang(lang) {
+      document.documentElement.setAttribute('data-lang', lang);
+      document.querySelectorAll('[data-en]').forEach(function(el) {
+        el.textContent = el.getAttribute('data-' + lang) || el.getAttribute('data-en');
+      });
+      try { localStorage.setItem('fomo-lang', lang); } catch(e) {}
+    }
+    (function() {
+      var t, l;
+      try { t = localStorage.getItem('fomo-theme'); l = localStorage.getItem('fomo-lang'); } catch(e) {}
+      if (t) document.documentElement.setAttribute('data-theme', t);
+      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.setAttribute('data-theme', 'dark');
+      setLang(l || document.documentElement.getAttribute('data-lang') || 'zh');
+    })();
+  </script>
+</body>
+</html>

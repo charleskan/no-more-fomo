@@ -80,6 +80,20 @@
       color: var(--accent-hover);
     }
 
+    /* Per-item detail links */
+    a.item-detail-title { color: inherit; }
+    a.item-detail-title:hover { color: var(--accent); }
+    a.item-detail {
+      font-family: var(--font-mono); font-size: 11px; white-space: nowrap;
+      color: var(--accent); background: var(--accent-subtle);
+      border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px;
+      transition: all 0.15s ease;
+    }
+    a.item-detail:hover { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    a.hl-detail { color: inherit; }
+    a.hl-detail:hover { color: var(--accent); }
+    .highlights li a.hl-detail { cursor: pointer; }
+
     /* ===== Header ===== */
     .header {
       border-bottom: 1px solid var(--border);
@@ -590,18 +604,18 @@
   <div class="header">
     <div class="header-top">
       <div>
-        <a href="./index.html" class="back-link" data-zh="← 归档" data-en="← Archive">← 归档</a>
+        <a href="./index.html" class="back-link" {{L10N_ATTRS:archive}}>{{L10N:archive}}</a>
         <div class="title">No More <span>FOMO</span></div>
         <div class="meta">{{DIGEST_DATE}} | {{DIGEST_META}}</div>
       </div>
       <div class="controls">
         <div class="view-switcher">
-          <button class="view-btn active" data-zh="报纸" data-en="Newspaper" onclick="setView('newspaper')">报纸</button>
-          <button class="view-btn" data-zh="侧栏" data-en="Sidebar" onclick="setView('sidebar')">侧栏</button>
-          <button class="view-btn" data-zh="网格" data-en="Grid" onclick="setView('grid')">网格</button>
+          <button class="view-btn active" {{L10N_ATTRS:viewNewspaper}} onclick="setView('newspaper')">{{L10N:viewNewspaper}}</button>
+          <button class="view-btn" {{L10N_ATTRS:viewSidebar}} onclick="setView('sidebar')">{{L10N:viewSidebar}}</button>
+          <button class="view-btn" {{L10N_ATTRS:viewGrid}} onclick="setView('grid')">{{L10N:viewGrid}}</button>
         </div>
         <button class="theme-btn" onclick="toggleTheme()">🌓</button>
-        <button class="lang-btn" onclick="toggleLang()">中/EN</button>
+        <button class="lang-btn" onclick="toggleLang()">{{L10N_LANG_TOGGLE}}</button>
       </div>
     </div>
   </div>
@@ -640,21 +654,36 @@
       try { localStorage.setItem('fomo-theme', next); } catch(e) {}
     }
 
-    function toggleLang() {
-      var path = window.location.pathname;
-      var filename = path.split('/').pop();
-      if (filename.match(/-zh\.html$/)) {
-        window.location.href = filename.replace(/-zh\.html$/, '.html');
-      } else {
-        window.location.href = filename.replace(/\.html$/, '-zh.html');
+    var LOCALES = {{L10N_LOCALES}};
+
+    /* Which locale does this basename end with? Returns {idx, stem}. */
+    function splitLocale(base) {
+      for (var i = 0; i < LOCALES.length; i++) {
+        var suf = LOCALES[i].suffix;
+        if (suf && base.length > suf.length && base.slice(-suf.length) === suf)
+          return { idx: i, stem: base.slice(0, -suf.length) };
       }
+      for (var j = 0; j < LOCALES.length; j++)
+        if (LOCALES[j].suffix === '') return { idx: j, stem: base };
+      return { idx: 0, stem: base };
+    }
+
+    /* Cycle to the same page in the next locale (detail pages keep --slug). */
+    function toggleLang() {
+      var f = window.location.pathname.split('/').pop().replace(/\.html$/, '');
+      var m = f.match(/^(.*?)--(.*)$/);
+      var base = m ? m[1] : f;
+      var rest = m ? '--' + m[2] : '';
+      var cur = splitLocale(base);
+      var next = LOCALES[(cur.idx + 1) % LOCALES.length];
+      window.location.href = './' + cur.stem + next.suffix + rest + '.html';
     }
 
     function setLang(lang) {
       document.documentElement.setAttribute('data-lang', lang);
-      var els = document.querySelectorAll('[data-zh][data-en]');
+      var els = document.querySelectorAll('[data-en]');
       els.forEach(function(el) {
-        el.textContent = el.getAttribute('data-' + lang);
+        el.textContent = el.getAttribute('data-' + lang) || el.getAttribute('data-en');
       });
       try { localStorage.setItem('fomo-lang', lang); } catch(e) {}
     }
