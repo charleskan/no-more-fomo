@@ -174,6 +174,12 @@ discovery:
   enabled: true
   max_per_topic: 3
 
+deploy:
+  s3:                           # Presence of a bucket enables the S3 deploy step
+    bucket: "my-fomo-digests"   # S3 static-website bucket (required to deploy)
+    profile: "fomo-deploy"      # Optional: scoped IAM profile (S3-only, one bucket)
+    region: "us-east-1"         # Optional: bucket region
+
 topic_search:
   enabled: true
   min_mentions: 2
