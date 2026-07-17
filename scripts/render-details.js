@@ -1,0 +1,134 @@
+#!/usr/bin/env node
+// Usage: bun scripts/render-details.js ~/no-more-fomo/2026-07-09-zh-details.md
+// One authored markdown holds a "白话详解" section per news item; this emits
+// ONE standalone detail page per item: <base>--<slug>.html
+// Each page = three-question beginner explanation, with the source ref link(s)
+// shown next to the title. Slug = the item's English title in kebab-case.
+//
+// Authored markdown format:
+//   # (ignored page title)
+//   ## <Item title> {#english-slug}
+//   kicker: 模型与发布            (optional — section label shown above title)
+//   ref: [OpenAI 公告](url) · [HN](url)
+//   ### 这是在讲什么?
+//   ...prose / lists / > quotes ...
+//   ### <term> 到底是什么?
+//   ...
+//   ### 网友都在讨论什么?
+//   信号: HN 636 分、422 则留言
+//   1. ...
+
+const fs = require('fs');
+const path = require('path');
+
+const mdPath = process.argv[2];
+if (!mdPath || !/-details\.md$/.test(mdPath)) {
+  console.error('Usage: bun scripts/render-details.js <path-to-YYYY-MM-DD[-zh]-details.md>');
+  process.exit(1);
+}
+
+const scriptDir = path.dirname(__filename);
+const repoDir = path.dirname(scriptDir);
+const templatePath = path.join(repoDir, 'template', 'detail.html');
+const outputDir = path.dirname(path.resolve(mdPath));
+
+const base = path.basename(mdPath).replace(/-details\.md$/, '');   // e.g. 2026-07-09-zh
+const isZh = /-zh$/.test(base);
+const digestLink = `./${base}.html`;
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function inlineFmt(text) {
+  const links = [];
+  const withPlaceholders = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+    const idx = links.length;
+    links.push(`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label)}</a>`);
+    return `\x00LINK${idx}\x00`;
+  });
+  let result = esc(withPlaceholders);
+  result = result.replace(/\x00LINK(\d+)\x00/g, (_, idx) => links[idx]);
+  result = result.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  return result;
+}
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// --- Split authored markdown into per-item blocks ---
+const md = fs.readFileSync(path.resolve(mdPath), 'utf-8');
+const lines = md.split('\n');
+const items = [];
+let cur = null;
+for (const raw of lines) {
+  const line = raw.replace(/\s+$/, '');
+  if (line.startsWith('# ') && !line.startsWith('## ')) continue;   // page title, ignore
+  const h = line.match(/^##\s+(.+?)(?:\s*\{#([a-z0-9-]+)\})?\s*$/);
+  if (h) {
+    if (cur) items.push(cur);
+    const title = h[1].trim();
+    cur = { title, slug: h[2] || slugify(title), kicker: '', refs: [], body: [] };
+    continue;
+  }
+  if (!cur) continue;
+  const kick = line.match(/^kicker:\s*(.+)$/i);
+  if (kick) { cur.kicker = kick[1].trim(); continue; }
+  const ref = line.match(/^ref:\s*(.+)$/i);
+  if (ref) {
+    const re = /\[([^\]]+)\]\(([^)]+)\)/g; let m;
+    while ((m = re.exec(ref[1])) !== null) cur.refs.push({ label: m[1], url: m[2] });
+    continue;
+  }
+  cur.body.push(line);
+}
+if (cur) items.push(cur);
+
+// --- Render one item's body markdown → HTML ---
+function renderBody(bodyLines) {
+  let html = '';
+  let listType = null, inQuote = false;
+  const closeList = () => { if (listType) { html += `</${listType}>\n`; listType = null; } };
+  const closeQuote = () => { if (inQuote) { html += `</blockquote>\n`; inQuote = false; } };
+  for (const line of bodyLines) {
+    if (line.startsWith('### ')) { closeList(); closeQuote(); html += `<h2>${inlineFmt(line.slice(4).trim())}</h2>\n`; continue; }
+    const sig = line.match(/^\s*(?:信号|Signal)[:：]\s*(.+)$/);
+    if (sig) { closeList(); closeQuote(); html += `<div class="signal">${inlineFmt(sig[1])}</div>\n`; continue; }
+    if (/^>\s?/.test(line)) { closeList(); if (!inQuote) { html += `<blockquote>\n`; inQuote = true; } html += `${inlineFmt(line.replace(/^>\s?/, ''))}<br>\n`; continue; }
+    if (inQuote && line.trim() === '') { closeQuote(); continue; }
+    const ol = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (ol) { closeQuote(); if (listType !== 'ol') { closeList(); html += `<ol>\n`; listType = 'ol'; } html += `<li>${inlineFmt(ol[1])}</li>\n`; continue; }
+    const ul = line.match(/^\s*[-*]\s+(.+)$/);
+    if (ul) { closeQuote(); if (listType !== 'ul') { closeList(); html += `<ul>\n`; listType = 'ul'; } html += `<li>${inlineFmt(ul[1])}</li>\n`; continue; }
+    if (line.trim() === '') { closeList(); continue; }
+    closeList(); closeQuote(); html += `<p>${inlineFmt(line.trim())}</p>\n`;
+  }
+  closeList(); closeQuote();
+  return html;
+}
+
+const template = fs.readFileSync(templatePath, 'utf-8');
+const backLabel = isZh ? '返回摘要' : 'digest';
+
+items.forEach((it, i) => {
+  const refsHtml = it.refs.map(r =>
+    `<a class="ref-link" href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.label)} ↗</a>`
+  ).join('');
+  const prev = i > 0 ? items[i - 1] : null;
+  const next = i < items.length - 1 ? items[i + 1] : null;
+  const prevHtml = prev ? `<a href="./${base}--${prev.slug}.html">← ${esc(prev.title)}</a>` : `<span></span>`;
+  const nextHtml = next ? `<a href="./${base}--${next.slug}.html">${esc(next.title)} →</a>` : `<span></span>`;
+
+  const html = template
+    .replace(/\{\{DETAIL_LANG\}\}/g, isZh ? 'zh' : 'en')
+    .replace(/\{\{DETAIL_TITLE\}\}/g, esc(it.title))
+    .replace('{{DETAIL_DIGEST_LINK}}', digestLink)
+    .replace('{{DETAIL_KICKER}}', esc(it.kicker || (isZh ? '白话详解' : 'Explainer')))
+    .replace('{{DETAIL_REFS}}', refsHtml)
+    .replace('{{DETAIL_BODY}}', renderBody(it.body))
+    .replace('{{DETAIL_PREVNEXT}}', prevHtml + nextHtml);
+
+  const outPath = path.join(outputDir, `${base}--${it.slug}.html`);
+  fs.writeFileSync(outPath, html);
+});
+
+console.log(`Written ${items.length} detail pages: ${base}--<slug>.html`);

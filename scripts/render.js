@@ -170,40 +170,55 @@ function parseMd(md) {
 
 // --- Render HTML fragments ---
 
+// Every news item carries a trailing `{#slug}` marker in the digest markdown,
+// pointing at its own per-item detail page: <DETAILS_BASE>--<slug>.html
+let DETAILS_BASE = '';   // e.g. ./2026-07-09-zh
+
+function extractSlug(raw) {
+  const m = raw.match(/\s*\{#([a-z0-9-]+)\}\s*$/);
+  if (m) return { slug: m[1], raw: raw.replace(/\s*\{#[a-z0-9-]+\}\s*$/, '') };
+  return { slug: null, raw };
+}
+function detailHref(slug) { return `${DETAILS_BASE}--${slug}.html`; }
+
 function renderItem(item) {
-  const raw = item.raw;
+  const ex = extractSlug(item.raw);
+  const raw = ex.raw;
+  const linked = ex.slug && DETAILS_BASE;
+  const href = linked ? detailHref(ex.slug) : null;
+  const titleWrap = (t) => linked
+    ? `<a class="item-detail-title" href="${href}">${esc(t)}</a>`
+    : esc(t);
+  const detailBtn = linked
+    ? `<a class="item-detail" href="${href}" data-zh="白话详解 →" data-en="Explainer →">白话详解 →</a>`
+    : '';
   let html = `<div class="item">`;
 
   // Parse: **Title** — description | links | @source | NL
   const titleMatch = raw.match(/^\*\*([^*]+)\*\*\s*[—–-]\s*(.*)/);
   if (titleMatch) {
-    html += `<div class="item-title">${esc(titleMatch[1])}</div>`;
+    html += `<div class="item-title">${titleWrap(titleMatch[1])}</div>`;
     const rest = titleMatch[2];
-    // Split by | for meta parts
     const parts = rest.split('|').map(p => p.trim());
     const desc = parts[0] || '';
     html += `<div class="item-desc">${inlineFmt(desc)}</div>`;
-    if (parts.length > 1) {
-      const metaParts = parts.slice(1).map(p => {
-        // @handle → badge
-        if (p.match(/^@\w+/)) return `<span class="badge badge-source">${esc(p)}</span>`;
-        // HN Npts → green badge
-        if (p.match(/HN \d+/)) return `<span class="badge badge-green">${esc(p)}</span>`;
-        // [link](url) → link
-        if (p.match(/\[.*\]\(.*\)/)) return `<span class="item-links">${inlineFmt(p)}</span>`;
-        return esc(p);
-      });
-      html += `<div class="item-meta">${metaParts.join(' ')}</div>`;
-    }
+    const metaParts = parts.slice(1).map(p => {
+      if (p.match(/^@\w+/)) return `<span class="badge badge-source">${esc(p)}</span>`;
+      if (p.match(/HN \d+/)) return `<span class="badge badge-green">${esc(p)}</span>`;
+      if (p.match(/\[.*\]\(.*\)/)) return `<span class="item-links">${inlineFmt(p)}</span>`;
+      return esc(p);
+    });
+    if (detailBtn) metaParts.push(detailBtn);
+    if (metaParts.length) html += `<div class="item-meta">${metaParts.join(' ')}</div>`;
   } else {
-    // Simple format: **Title** rest
     const simpleMatch = raw.match(/^\*\*([^*]+)\*\*\s*(.*)/);
     if (simpleMatch) {
-      html += `<div class="item-title">${esc(simpleMatch[1])}</div>`;
+      html += `<div class="item-title">${titleWrap(simpleMatch[1])}</div>`;
       if (simpleMatch[2]) html += `<div class="item-desc">${inlineFmt(simpleMatch[2])}</div>`;
     } else {
       html += `<div class="item-desc">${inlineFmt(raw)}</div>`;
     }
+    if (detailBtn) html += `<div class="item-meta">${detailBtn}</div>`;
   }
 
   // Blockquote (podcast summary or HN context)
@@ -218,9 +233,15 @@ function renderItem(item) {
 function renderHighlights(section) {
   let html = `<div class="highlights-title" data-zh="今日要点" data-en="Today's Highlights">今日要点</div>`;
   html += `<ol>`;
-  for (const item of section.items) {
-    html += `<li>${inlineFmt(item.raw)}</li>`;
-  }
+  section.items.forEach((item) => {
+    const ex = extractSlug(item.raw);
+    const inner = inlineFmt(ex.raw);
+    if (ex.slug && DETAILS_BASE) {
+      html += `<li><a class="hl-detail" href="${detailHref(ex.slug)}">${inner}</a></li>`;
+    } else {
+      html += `<li>${inner}</li>`;
+    }
+  });
   html += `</ol>`;
   return html;
 }
@@ -264,9 +285,19 @@ const allDates = fs.readdirSync(outputDir)
   .filter(f => /^\d{4}-\d{2}-\d{2}\.html$/.test(f))
   .map(f => f.replace('.html', ''))
   .sort();
+// The current date's .html is written LATER in this run, so it isn't on disk yet —
+// include it explicitly, else today's digest is missing from its own index / date-nav.
+if (date !== 'unknown' && !allDates.includes(date)) {
+  allDates.push(date);
+  allDates.sort();
+}
 const currentIdx = allDates.indexOf(date);
 const prevDate = currentIdx > 0 ? allDates[currentIdx - 1] : null;
 const nextDate = currentIdx < allDates.length - 1 ? allDates[currentIdx + 1] : null;
+
+// Per-item detail pages live at <base>--<slug>.html; items link to them.
+const base = path.basename(mdPath).replace(/\.md$/, '');   // e.g. 2026-07-09-zh
+DETAILS_BASE = `./${base}`;
 
 const sections = parseMd(md);
 const highlightsSection = sections.find(s => s.meta.id === 'highlights');

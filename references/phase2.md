@@ -75,11 +75,65 @@ Read `~/no-more-fomo/YYYY-MM-DD.md` and apply:
 3. **Discovery:** Insert `## 发现` section before Sources line
 4. **Update Sources line** to include Phase 2 counts
 
+## Step C2: Write per-item detail pages (default ON, skip with `--no-brief`)
+
+**Every** news item gets its own clickable **detail page** — the three-question
+"白话详解" for that single item, with the source ref link(s) beside the title.
+This covers highlights AND every section item (dedupe: the same news appearing in
+two sections shares ONE slug/page).
+
+Two parts:
+
+**(a) Tag every digest item with a slug.** In the digest markdown, append
+`{#slug}` to the end of each item line (highlights included), where slug is the
+item's **English title in kebab-case** (`gpt-live`, `gitlost`, `swe-1-7`). render.js
+strips the marker and turns the item into a link to `YYYY-MM-DD[-zh]--<slug>.html`.
+Reuse the same slug for the same news across sections.
+
+**(b) Author `YYYY-MM-DD[-zh]-details.md`** — one block per UNIQUE item:
+
+```markdown
+# 白话详解 — YYYY-MM-DD        <!-- ignored page title -->
+
+## OpenAI 发布 GPT-Live {#gpt-live}
+kicker: 模型与发布                          <!-- optional section label above title -->
+ref: [OpenAI 公告](url) · [HN 讨论](url)     <!-- source links, shown beside the title -->
+### 这是在讲什么?
+<1–3 plain sentences>
+### 「语音模型」到底是什么?
+<define the one term from scratch, everyday analogy>
+### 网友都在讨论什么?
+信号: HN NNN 分、NNN 则留言                   <!-- one-line signal → green badge -->
+1. <discussion topic>
+2. <discussion topic>
+3. <discussion topic>
+<!-- if no discussion signal, replace Q3 with "为什么值得注意?" + significance -->
+
+## <next unique item> {#slug}
+...
+```
+
+Rules:
+- Depth scales with signal: items with real HN/community discussion get the full
+  three questions incl. a numbered "网友都在讨论什么"; long-tail papers get
+  这是在讲什么 / 术语是什么 / 为什么值得注意 (2–4 sentences each).
+- Every `## ` slug MUST also appear as a `{#slug}` on the matching digest item(s),
+  or that item won't link. Conversely every slug used in the digest MUST have a
+  block here, or the link 404s.
+- Do this for each language you generate a digest for (en + zh).
+
 ## Step D: Generate HTML
 
 ```bash
+# detail pages → one HTML per item (render FIRST so links resolve)
+bun /path/to/no-more-fomo/scripts/render-details.js ~/no-more-fomo/YYYY-MM-DD-details.md
+
+# digest → HTML (turns every {#slug}-tagged item into a link to its detail page)
 bun /path/to/no-more-fomo/scripts/render.js ~/no-more-fomo/YYYY-MM-DD.md
 ```
+
+Verify after rendering: no leftover `{#slug}` text in the digest HTML, and every
+`--<slug>.html` referenced by the digest actually exists (no broken links).
 
 Features:
 - Three view layouts: newspaper (default), sidebar, grid

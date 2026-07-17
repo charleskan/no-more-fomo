@@ -157,13 +157,33 @@ Primary digest is always in English. After saving, automatically translate to Ch
 
 If user has CLAUDE.md or memory files with project keywords, tag matching items with `[RELEVANT]`.
 
-## Step 8: Summary to User
+## Step 8: Beginner Briefing to User (default ON, skip with `--no-brief`)
 
-Print concise summary:
-- Top 3 highlights with links
-- Count per section
-- New podcast episodes
-- Any `[RELEVANT]` items
+The final chat message is a **spoken-style briefing for someone new to AI news**,
+not a file list or a stats dump. Assume the reader does not know the jargon and
+does not want to click links — they want to be *told* what happened and why.
+
+Write it in the user's language (Chinese briefing for a zh digest). Structure:
+
+1. **One-line takeaway** — "if you only remember one thing today, it's X."
+2. **The 3–5 items that actually matter — each run through the SAME three questions**
+   (translate the headings into the user's language):
+   - **What's this about?** — the news in 1–2 plain sentences.
+   - **What exactly is XXX?** — take the one term/name a newcomer
+     would trip on and define it from scratch, everyday analogy if useful.
+   - **What's the community saying?** — lead with a one-line signal
+     (HN points & comment counts, or tweet engagement), then **list the discussion
+     topics as a numbered list (1, 2, 3…)**, each a distinct angle the community
+     raised. No discussion signal → say so and give the significance instead.
+3. **The long tail in one sentence** — "also today: two new coding models, a
+   right-to-repair ruling, and four agent-training papers" — do not enumerate.
+4. **Gaps & caveats in plain terms** — what was missing and why (e.g. "no Twitter
+   today because the tool that reads X isn't installed").
+
+Do NOT paste the markdown sections back. The `.md`/`.html` files hold the full
+detail; this message is the human handoff. Keep it prose, warm, and skimmable.
+
+Still mention where the files were saved (one line) and note `[RELEVANT]` items if any.
 
 ## Common Mistakes
 
