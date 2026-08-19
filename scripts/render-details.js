@@ -87,7 +87,8 @@ if (cur) items.push(cur);
 
 // A signal line may be labelled in any locale's language (信号: / Signal: / …)
 const SIGNAL_RE = new RegExp(
-  '^\\s*(?:' + Object.values(LOCALES).map(l => l.signalLabel).join('|') + ')[:：]\\s*(.+)$');
+  '^\\s*(?:' + Object.values(LOCALES).map(l => l.signalLabel).join('|') +
+  '|信号|信號)[:：]\\s*(.+)$');   // 簡繁都收（舊 md 保險）
 
 // --- Render one item's body markdown → HTML ---
 function renderBody(bodyLines) {

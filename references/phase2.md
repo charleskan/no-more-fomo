@@ -43,10 +43,10 @@ curl -s "https://s.jina.ai/latest%20TOPIC%20research%202026"
 ```markdown
 **TLDR:** [3 sentences: core thesis, most surprising insight, practical takeaway]
 
-**章节:**
+**章節:**
 - *[Chapter Title]* — [1-2 sentence summary]
 
-**关键引用:**
+**關鍵引用:**
 > **[Speaker Name]:** "[Translated quote]" [HH:MM:SS]
 ```
 
@@ -57,24 +57,24 @@ Speaker names stay in original form. Select 2-3 most insightful quotes.
 **Topic Search analysis:**
 - Filter: `likeCount > 200`, exclude KOLs already in digest
 - If >80% overlap with existing tweets, skip
-- Extract 2-3 external perspectives → format as `> 社区热议:` blockquote
+- Extract 2-3 external perspectives → format as `> 社區熱議:` blockquote
 
 **Discovery filtering:**
 - Deduplicate: remove URLs already in digest
 - Only keep technical content (papers, blogs, conference pages)
 - Keep max 3 per topic:
 ```markdown
-- **[类型]** [Title] — [summary] | [link](URL)
+- **[類型]** [Title] — [summary] | [link](URL)
 ```
-Types: 博客, 会议, 报告, 教程
+Types: 博客, 會議, 報告, 教程
 
 ## Step C: Update Digest File
 
 Read `~/no-more-fomo/YYYY-MM-DD.md` and apply:
 
 1. **Podcasts:** Replace `⏳ 深度摘要生成中...` → structured summary
-2. **Topic Search:** Append `> 社区热议:` blockquote after matching entries
-3. **Discovery:** Insert `## 发现` section before Sources line
+2. **Topic Search:** Append `> 社區熱議:` blockquote after matching entries
+3. **Discovery:** Insert `## 發現` section before Sources line
 4. **Update Sources line** to include Phase 2 counts
 
 ## Step C2: Write per-item detail pages (default ON, skip with `--no-brief`)
@@ -116,9 +116,9 @@ Signal: HN NNN points, NNN comments         <!-- one-line signal → green badge
 ```
 
 Rules:
-- The zh file uses Chinese headings (这是在讲什么? / 「XXX」到底是什么? /
-  网友都在讨论什么? / 为什么值得注意?) and `信号:` for the signal line — the
-  renderer accepts both `Signal:` and `信号:`.
+- The zh file uses Chinese headings (這是在講什麼? / 「XXX」到底是什麼? /
+  網友都在討論什麼? / 為什麼值得注意?) and `信號:` for the signal line — the
+  renderer accepts both `Signal:` and `信號:`.
 - Depth scales with signal: items with real HN/community discussion get the full
   three questions incl. a numbered "what's the community saying"; long-tail papers
   get what's-this-about / the-one-term / why-it-matters (2–4 sentences each).

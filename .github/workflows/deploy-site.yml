@@ -1,0 +1,45 @@
+name: Deploy site shell to S3
+
+# 只管「網站殼」：homepage（site/index.html）改動 push 到 main 就自動部署。
+# 每日 digest 內容（*.html / data/homepage.json）係本地 skill 經 deploy-s3.sh 推，
+# 呢條 CI 完全唔掂 data/，免得 repo 入面嘅樣本 json 蓋咗每日真資料。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '.github/workflows/deploy-site.yml'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write   # OIDC → AWS，冇長期金鑰
+  contents: read
+
+env:
+  BUCKET: no-more-fomo-daily
+  AWS_REGION: ap-southeast-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload homepage
+        run: |
+          aws s3 cp site/index.html "s3://$BUCKET/index.html" \
+            --content-type "text/html; charset=utf-8"
+
+      - name: Invalidate CloudFront
+        if: ${{ vars.CF_DISTRIBUTION_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ vars.CF_DISTRIBUTION_ID }}" \
+            --paths "/index.html"

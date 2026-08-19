@@ -9,7 +9,7 @@ description: >
 
 Daily AI intelligence briefing: Twitter KOLs + AI lab blogs + tech podcasts + arxiv + HackerNews.
 
-**Primary digest is always in English.** After generating, automatically translate to Chinese (`YYYY-MM-DD-zh.md`). Both get HTML rendering. Skip translation with `--en-only`.
+**Primary digest is always in English.** After generating, automatically translate to **Traditional Chinese (繁體中文，香港用字：發佈/網絡/軟件，NEVER simplified)** (`YYYY-MM-DD-zh.md`). Both get HTML rendering. Skip translation with `--en-only`.
 
 ## When to Use
 
@@ -75,7 +75,7 @@ How it works:
 - In the digest markdown, append `{#english-title-kebab-slug}` to the end of every
   item line (highlights included). render.js strips it and turns each item into a
   link to `YYYY-MM-DD[-zh]--<slug>.html` (both the title and an explainer chip —
-  `Explainer →` / `白话详解 →` depending on the page language).
+  `Explainer →` / `白話詳解 →` depending on the page language).
   The SAME news in two sections shares one slug → one detail page.
 - Write one authored `YYYY-MM-DD[-zh]-details.md` with a `## <title> {#slug}` block
   per unique item, then render with `scripts/render-details.js` (emits one HTML
@@ -83,7 +83,7 @@ How it works:
 - Slugs use the item's **English title in kebab-case** (`gpt-live`, `gitlost`).
 
 Per-item detail block format (in `-details.md`; the zh file uses the Chinese
-question headings and `信号:`):
+question headings and `信號:`):
 ```markdown
 ## OpenAI releases GPT-Live {#gpt-live}
 kicker: Models & Releases                  <!-- section label above the title -->

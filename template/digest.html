@@ -1,54 +1,62 @@
 <!DOCTYPE html>
-<html data-theme="light" data-lang="{{DIGEST_LANG}}">
+<html data-theme="dark" data-lang="{{DIGEST_LANG}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>No More FOMO — {{DIGEST_DATE}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
   <style>
-    /* ===== Design Tokens ===== */
+    /* ===== Design Tokens（broadcast 紫 = homepage 同款）===== */
     :root,
     [data-theme="light"] {
-      --bg: #f6f4f0;
-      --bg-secondary: #edeae4;
+      --bg: #f4f2fc;
+      --bg-image: none;
+      --bg-secondary: #eae6f8;
       --surface: #ffffff;
-      --surface-warm: #faf8f4;
+      --surface-warm: #f8f6ff;
       --surface-elevated: #ffffff;
-      --border: #ddd6c8;
-      --border-subtle: #ebe6dc;
-      --text: #1a1612;
-      --text-secondary: #4a4035;
-      --text-muted: #8a7d6b;
-      --accent: #9a6c1e;
-      --accent-hover: #7a5516;
-      --accent-subtle: rgba(154, 108, 30, 0.08);
-      --green: #2d7a45;
-      --green-subtle: rgba(45, 122, 69, 0.08);
-      --shadow-sm: 0 1px 2px rgba(26, 22, 18, 0.04);
-      --shadow-md: 0 2px 8px rgba(26, 22, 18, 0.06), 0 1px 2px rgba(26, 22, 18, 0.04);
+      --border: #d4ccec;
+      --border-subtle: #e4def4;
+      --text: #191238;
+      --text-secondary: #453a6e;
+      --text-muted: #7d74a3;
+      --accent: #6a4fe0;
+      --accent-hover: #5238c0;
+      --accent-subtle: rgba(106, 79, 224, 0.09);
+      --green: #0e7fa8;
+      --green-subtle: rgba(14, 127, 168, 0.09);
+      --shadow-sm: 0 1px 2px rgba(25, 18, 56, 0.05);
+      --shadow-md: 0 2px 8px rgba(25, 18, 56, 0.08), 0 1px 2px rgba(25, 18, 56, 0.05);
       --radius: 8px;
       --radius-sm: 5px;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", Roboto, sans-serif;
       --font-mono: "SF Mono", Menlo, "Cascadia Code", "Fira Code", monospace;
+      --font-display: 'Orbitron', "PingFang TC", "Noto Sans TC", sans-serif;
     }
 
     [data-theme="dark"] {
-      --bg: #0f1114;
-      --bg-secondary: #181b21;
-      --surface: #1e2228;
-      --surface-warm: #242830;
-      --surface-elevated: #282d36;
-      --border: #2e343e;
-      --border-subtle: #262c35;
-      --text: #e8eaf0;
-      --text-secondary: #a0a8b8;
-      --text-muted: #606878;
-      --accent: #c4b08a;
-      --accent-hover: #dbc8a0;
-      --accent-subtle: rgba(196, 176, 138, 0.1);
-      --green: #5cb87a;
-      --green-subtle: rgba(92, 184, 122, 0.1);
-      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      --bg: #0c0930;
+      --bg-image:
+        radial-gradient(120% 95% at 82% 8%, rgba(96, 74, 236, 0.50), transparent 55%),
+        radial-gradient(110% 85% at 12% 88%, rgba(64, 44, 178, 0.45), transparent 60%),
+        radial-gradient(150% 130% at 50% 45%, #251b70 0%, #160f49 46%, #0b0830 100%);
+      --bg-secondary: rgba(255, 255, 255, 0.07);
+      --surface: #171058;
+      --surface-warm: rgba(255, 255, 255, 0.06);
+      --surface-elevated: #1d1668;
+      --border: rgba(255, 255, 255, 0.28);
+      --border-subtle: rgba(255, 255, 255, 0.13);
+      --text: #ffffff;
+      --text-secondary: rgba(233, 230, 255, 0.85);
+      --text-muted: rgba(255, 255, 255, 0.52);
+      --accent: #b9a8ff;
+      --accent-hover: #d9d0ff;
+      --accent-subtle: rgba(150, 128, 255, 0.16);
+      --green: #4fd2ff;
+      --green-subtle: rgba(79, 210, 255, 0.13);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
       --radius: 10px;
       --radius-sm: 6px;
     }
@@ -62,7 +70,9 @@
 
     body {
       font-family: var(--font-sans);
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image: var(--bg-image);
+      background-attachment: fixed;
       color: var(--text);
       line-height: 1.6;
       min-height: 100vh;
@@ -138,10 +148,14 @@
       color: var(--accent);
     }
 
+    a.title-link { color: inherit; display: inline-block; }
+    a.title-link:hover .title span { color: var(--accent-hover); }
+
     .title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
+      font-family: var(--font-display);
+      font-size: 19px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
       line-height: 1.2;
     }
 
@@ -294,13 +308,14 @@
     }
 
     .highlights-title {
+      font-family: var(--font-display);
       color: var(--accent);
       text-transform: uppercase;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1.5px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3em;
       margin-bottom: 10px;
-      opacity: 0.85;
+      opacity: 0.9;
     }
 
     .highlights ol {
@@ -379,16 +394,27 @@
     }
 
     .section-header {
-      color: var(--accent);
+      font-family: var(--font-display);
+      color: var(--text);
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       padding-bottom: 10px;
       border-bottom: 1px solid var(--border-subtle);
       margin-bottom: 2px;
       display: flex;
       align-items: center;
       gap: 8px;
-      letter-spacing: -0.01em;
+      letter-spacing: 0.08em;
+    }
+
+    /* broadcast 式小菱形（同 homepage .g-ico 一款） */
+    .section-header::before {
+      content: '';
+      width: 0.75em;
+      height: 0.75em;
+      flex-shrink: 0;
+      background: var(--accent);
+      clip-path: polygon(0 0, 100% 0, 74% 100%, 0 74%);
     }
 
     .section-count {
@@ -604,8 +630,8 @@
   <div class="header">
     <div class="header-top">
       <div>
-        <a href="./index.html" class="back-link" {{L10N_ATTRS:archive}}>{{L10N:archive}}</a>
-        <div class="title">No More <span>FOMO</span></div>
+        <a href="./archive.html" class="back-link" {{L10N_ATTRS:archive}}>{{L10N:archive}}</a>
+        <a href="./index.html" class="title-link"><div class="title">No More <span>FOMO</span></div></a>
         <div class="meta">{{DIGEST_DATE}} | {{DIGEST_META}}</div>
       </div>
       <div class="controls">

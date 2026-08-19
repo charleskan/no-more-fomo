@@ -26,10 +26,40 @@ export AWS_DEFAULT_REGION
 echo "Identity: $(aws sts get-caller-identity --query Arn --output text)"
 echo "Syncing $SRC/*.html → s3://$BUCKET/ (region $AWS_DEFAULT_REGION)"
 
+# Rebuild homepage data (last 7 days) from digest markdown — pure parsing, no LLM
+if command -v node >/dev/null 2>&1 && [ -f "$(dirname "$0")/build-homepage-data.js" ]; then
+  node "$(dirname "$0")/build-homepage-data.js" "$SRC" || echo "WARN: homepage data build failed (continuing)"
+fi
+
 aws s3 sync "$SRC/" "s3://$BUCKET/" \
   --exclude "*" --include "*.html" \
   --content-type "text/html; charset=utf-8" \
   --no-progress
+
+# --- Homepage (site/index.html) + daily data (data/*.json) ---
+# Homepage is deployed-once source (repo site/); data is refreshed daily.
+: "${SITE_SRC:=$(cd "$(dirname "$0")/../site" 2>/dev/null && pwd)}"
+if [ -n "$SITE_SRC" ] && [ -f "$SITE_SRC/index.html" ]; then
+  aws s3 cp "$SITE_SRC/index.html" "s3://$BUCKET/index.html" \
+    --content-type "text/html; charset=utf-8" --no-progress
+fi
+DATA_DIR=""
+[ -d "$SRC/data" ] && DATA_DIR="$SRC/data"
+[ -z "$DATA_DIR" ] && [ -n "$SITE_SRC" ] && [ -d "$SITE_SRC/data" ] && DATA_DIR="$SITE_SRC/data"
+if [ -n "$DATA_DIR" ]; then
+  aws s3 sync "$DATA_DIR/" "s3://$BUCKET/data/" \
+    --exclude "*" --include "*.json" \
+    --content-type "application/json; charset=utf-8" \
+    --no-progress
+fi
+
+# --- CloudFront invalidation（有設 CF_DISTRIBUTION_ID 先跑；/* 算一條 path，每月 1000 條免費）---
+if [ -n "$CF_DISTRIBUTION_ID" ]; then
+  aws cloudfront create-invalidation --distribution-id "$CF_DISTRIBUTION_ID" \
+    --paths "/*" --query 'Invalidation.Id' --output text \
+    && echo "CloudFront invalidated: $CF_DISTRIBUTION_ID" \
+    || echo "WARN: CloudFront invalidation failed (continuing)"
+fi
 
 echo "Deployed → http://$BUCKET.s3-website-$AWS_DEFAULT_REGION.amazonaws.com/"
 

@@ -1,43 +1,51 @@
 <!DOCTYPE html>
-<html data-theme="light" data-lang="zh">
+<html data-theme="dark" data-lang="zh">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>No More FOMO — Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
   <style>
-    /* ===== Design Tokens ===== */
+    /* ===== Design Tokens（broadcast 紫 = homepage 同款）===== */
     :root,
     [data-theme="light"] {
-      --bg: #faf8f4;
-      --bg-secondary: #f2efe8;
+      --bg: #f4f2fc;
+      --bg-image: none;
+      --bg-secondary: #eae6f8;
       --surface: #ffffff;
-      --surface-warm: #f9f6f0;
-      --border: #e0d5c0;
-      --text: #2c2416;
-      --text-secondary: #5a4d38;
-      --text-muted: #7a6a50;
-      --accent: #b07a22;
-      --accent-hover: #8d6118;
-      --green: #2d8a4e;
+      --surface-warm: #f8f6ff;
+      --border: #d4ccec;
+      --text: #191238;
+      --text-secondary: #453a6e;
+      --text-muted: #7d74a3;
+      --accent: #6a4fe0;
+      --accent-hover: #5238c0;
+      --green: #0e7fa8;
       --yellow: #a67c00;
       --red: #c0392b;
       --radius: 6px;
-      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", Roboto, sans-serif;
       --font-mono: "SF Mono", Menlo, "Cascadia Code", monospace;
+      --font-display: 'Orbitron', "PingFang TC", "Noto Sans TC", sans-serif;
     }
 
     [data-theme="dark"] {
-      --bg: #16191e;
-      --bg-secondary: #1a212d;
-      --surface: #212833;
-      --surface-warm: #282e3a;
-      --border: #343c4a;
-      --text: #f0f2f6;
-      --text-secondary: #b0bac8;
-      --text-muted: #6a7485;
-      --accent: #a5aecc;
-      --accent-hover: #cad0e4;
-      --green: #4ade80;
+      --bg: #0c0930;
+      --bg-image:
+        radial-gradient(120% 95% at 82% 8%, rgba(96,74,236,0.50), transparent 55%),
+        radial-gradient(110% 85% at 12% 88%, rgba(64,44,178,0.45), transparent 60%),
+        radial-gradient(150% 130% at 50% 45%, #251b70 0%, #160f49 46%, #0b0830 100%);
+      --bg-secondary: rgba(255,255,255,0.07);
+      --surface: rgba(13,9,52,0.55);
+      --surface-warm: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.22);
+      --text: #ffffff;
+      --text-secondary: rgba(233,230,255,0.85);
+      --text-muted: rgba(255,255,255,0.52);
+      --accent: #b9a8ff;
+      --accent-hover: #d9d0ff;
+      --green: #4fd2ff;
       --yellow: #facc15;
       --red: #f87171;
       --radius: 10px;
@@ -52,10 +60,13 @@
 
     body {
       font-family: var(--font-sans);
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image: var(--bg-image);
+      background-attachment: fixed;
       color: var(--text);
       line-height: 1.5;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
     a {
@@ -69,8 +80,9 @@
 
     /* ===== Header ===== */
     .header {
-      background: var(--surface);
-      border-bottom: 2px solid var(--border);
+      background: color-mix(in srgb, var(--bg) 88%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
       padding: 16px 24px;
       position: sticky;
       top: 0;
@@ -87,10 +99,14 @@
       gap: 12px;
     }
 
+    a.title-link { color: inherit; display: inline-block; }
+    a.title-link:hover .title span { color: var(--accent-hover); }
+
     .title {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 900;
+      letter-spacing: 0.04em;
     }
 
     .title span {
@@ -206,8 +222,10 @@
     }
 
     .date-card-date {
-      font-size: 16px;
-      font-weight: 700;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
       color: var(--text);
     }
 
@@ -254,8 +272,8 @@
   <div class="header">
     <div class="header-top">
       <div>
-        <div class="title">No More <span>FOMO</span></div>
-        <div class="meta" data-zh="历史存档" data-en="Archive">历史存档</div>
+        <a href="./index.html" class="title-link"><div class="title">No More <span>FOMO</span></div></a>
+        <div class="meta" data-zh="歷史存檔" data-en="Archive">歷史存檔</div>
       </div>
       <div class="controls">
         <button class="theme-btn" onclick="toggleTheme()">🌓</button>
@@ -267,7 +285,7 @@
   <div class="content">
     <div class="quick-nav">
       <input type="date" id="dateInput">
-      <button onclick="goToDate()" data-zh="跳转" data-en="Go">跳转</button>
+      <button onclick="goToDate()" data-zh="跳轉" data-en="Go">跳轉</button>
     </div>
     <div class="date-grid">
       {{INDEX_ENTRIES}}

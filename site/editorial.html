@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NO MORE AI FOMO — Daily AI Brief</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.1.14/swiper-bundle.min.css">
+<style>
+:root{
+  --mono: "SF Mono", ui-monospace, Menlo, "Cascadia Code", monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Helvetica Neue", sans-serif;
+  --pad-x: clamp(24px, 5vw, 72px);
+  --bleed: 16vh;     /* cube 上下裁走幾多（越大越似平面左右轉） */
+  --persp: 2600px;   /* 透視距離：越大縮放感越少 */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0918;color:#fff;
+  font-family:var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+/* ═══ 3D 特效層：cube 面 = 全幅生成式背景，純轉場用，唔接受滑鼠
+   （Chrome perspective+preserve-3d hit-testing bug → 互動全喺 2D overlay）═══ */
+.stage{position:fixed;inset:0;z-index:1;overflow:hidden}
+.swiper{position:absolute;left:0;top:calc(var(--bleed) * -1);width:100%;
+  height:calc(100% + var(--bleed) * 2)}
+.swiper.swiper-3d{perspective:var(--persp)}
+.swiper-slide{background:transparent;overflow:hidden}
+.swiper-cube .swiper-slide{pointer-events:none!important}
+
+.art{position:absolute;inset:-6%;background-size:cover;
+  animation:kenburns 22s ease-in-out infinite alternate}
+@keyframes kenburns{from{transform:scale(1) translate(0,0)}to{transform:scale(1.07) translate(-1.2%,1%)}}
+@media (prefers-reduced-motion:reduce){.art{animation:none}}
+/* 四款色調輪住用 */
+.art.p0{background:
+  linear-gradient(118deg, transparent 42%, rgba(150,130,255,.14) 52%, transparent 61%),
+  radial-gradient(130% 100% at 78% 10%, rgba(92,70,230,.55), transparent 55%),
+  radial-gradient(120% 90% at 15% 90%, rgba(48,34,150,.5), transparent 60%),
+  linear-gradient(165deg, #17114e 0%, #0e0a38 55%, #080720 100%)}
+.art.p1{background:
+  linear-gradient(112deg, transparent 38%, rgba(110,220,235,.10) 50%, transparent 60%),
+  radial-gradient(120% 95% at 80% 85%, rgba(20,110,140,.5), transparent 58%),
+  radial-gradient(110% 85% at 18% 12%, rgba(30,70,160,.45), transparent 60%),
+  linear-gradient(160deg, #0b2038 0%, #091430 55%, #070b1e 100%)}
+.art.p2{background:
+  linear-gradient(120deg, transparent 40%, rgba(255,190,120,.10) 51%, transparent 62%),
+  radial-gradient(125% 95% at 22% 15%, rgba(150,85,30,.42), transparent 55%),
+  radial-gradient(115% 90% at 82% 88%, rgba(90,40,110,.45), transparent 60%),
+  linear-gradient(158deg, #2a1626 0%, #1a0f24 55%, #0d081a 100%)}
+.art.p3{background:
+  linear-gradient(115deg, transparent 40%, rgba(240,140,170,.09) 52%, transparent 60%),
+  radial-gradient(120% 95% at 75% 20%, rgba(150,45,95,.4), transparent 55%),
+  radial-gradient(115% 90% at 15% 85%, rgba(60,30,130,.48), transparent 62%),
+  linear-gradient(162deg, #241030 0%, #150b28 55%, #0a0718 100%)}
+/* 面上極淡邊光，轉動時睇得出「面」喺度轉 */
+.tint{position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),
+             inset 3px 0 18px rgba(165,155,255,.08),
+             inset -3px 0 18px rgba(0,0,24,.3)}
+
+/* grain + vignette */
+.vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(120% 100% at 50% 40%, transparent 55%, rgba(5,4,16,.55) 100%),
+             linear-gradient(180deg, rgba(5,4,16,.45), transparent 22%, transparent 62%, rgba(5,4,16,.6))}
+.grain{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ═══ 2D 互動層：文字內容喺呢度，hover/click 100% 準 ═══ */
+#overlay{position:fixed;inset:0;z-index:4;pointer-events:none}
+#overlay a{pointer-events:auto}
+.slide-content{position:absolute;left:var(--pad-x);bottom:clamp(48px,11vh,120px);
+  max-width:min(680px, 78vw)}
+.mark{margin-bottom:14px;opacity:.9}
+.kicker{font-family:var(--mono);font-size:12px;font-weight:700;
+  letter-spacing:.3em;color:rgba(255,255,255,.85);text-transform:uppercase;
+  margin-bottom:18px}
+.kicker .sig{color:rgba(255,255,255,.5);letter-spacing:.18em;margin-left:1em}
+.headline{display:block;font-weight:500;color:#fff;
+  font-size:clamp(26px,4.6vh,46px);line-height:1.3;letter-spacing:.01em;
+  margin-bottom:14px;text-wrap:balance}
+a.headline:hover{text-decoration:underline;text-underline-offset:6px;
+  text-decoration-thickness:1px;text-decoration-color:rgba(255,255,255,.6)}
+.desc{font-size:clamp(14px,1.9vh,17px);line-height:1.75;
+  color:rgba(255,255,255,.72);margin-bottom:26px;max-width:560px;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cta{display:inline-flex;align-items:center;gap:.7em;
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.22em;
+  color:#fff;background:rgba(10,8,30,.35);border:1px solid rgba(255,255,255,.4);
+  border-radius:999px;padding:.95em 1.6em;transition:.25s;backdrop-filter:blur(6px)}
+.cta:hover{background:rgba(255,255,255,.16);border-color:#fff}
+.cta .arr{transition:transform .25s}
+.cta:hover .arr{transform:translateX(4px)}
+
+/* ═══ 頂部導覽（mono 大寫、下面一條幼白線）═══ */
+.nav{position:fixed;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:26px var(--pad-x) 20px;
+  border-bottom:1px solid rgba(255,255,255,.35)}
+.wordmark{font-family:var(--mono);font-weight:700;font-size:17px;
+  letter-spacing:.14em;white-space:nowrap}
+.wordmark b{opacity:.55;font-weight:700}
+.nav-links{display:flex;align-items:center;gap:clamp(18px,3vw,44px);
+  font-family:var(--mono);font-size:12px;letter-spacing:.22em}
+.nav-links a{color:rgba(255,255,255,.85);padding-bottom:3px;
+  border-bottom:1px solid transparent;transition:.2s}
+.nav-links a:hover,.nav-links a.active{color:#fff;border-bottom-color:#fff}
+.nav-date{color:rgba(255,255,255,.5);font-family:var(--mono);
+  font-size:12px;letter-spacing:.22em}
+
+/* ═══ 右側箭頭 + 右下圓點 ═══ */
+.next-btn{position:fixed;right:clamp(18px,3vw,44px);top:50%;transform:translateY(-50%);
+  z-index:10;width:56px;height:56px;border-radius:50%;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.5);background:rgba(10,8,30,.25);
+  color:#fff;font-size:22px;line-height:1;backdrop-filter:blur(4px);transition:.25s}
+.next-btn:hover,.next-btn:focus-visible{border-color:#fff;background:rgba(255,255,255,.14);outline:none}
+.dots{position:fixed;right:clamp(24px,3.2vw,48px);bottom:30px;z-index:10;
+  display:flex;gap:10px}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.35);
+  cursor:pointer;transition:.25s;border:none;padding:0}
+.dot.active{background:#fff}
+
+@media (max-width:760px){
+  :root{--bleed:10vh}
+  .nav{padding:18px 20px 14px}
+  .nav-date{display:none}
+  .nav-links{gap:16px;font-size:11px;letter-spacing:.14em}
+  .wordmark{font-size:14px}
+  .slide-content{left:20px;right:20px;max-width:none;bottom:64px}
+  .next-btn{display:none}
+  .dots{left:20px;right:auto}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="wordmark" href="index.html">NO MORE <b>AI</b> FOMO</a>
+  <div class="nav-links">
+    <span class="nav-date" id="nav-date"></span>
+    <a id="nav-digest" href="#">TODAY'S DIGEST</a>
+    <a href="archive.html">ARCHIVE</a>
+  </div>
+</nav>
+
+<div class="stage">
+  <div class="swiper">
+    <div class="swiper-wrapper"><!-- cube 面 = 生成式背景，由 data/homepage.json 生成 --></div>
+  </div>
+</div>
+
+<div class="vignette"></div>
+<div class="grain"></div>
+<div id="overlay"></div>
+
+<button class="next-btn" aria-label="下一則">→</button>
+<div class="dots" id="dots"></div>
+
+<script type="application/json" id="fallback-data">
+{ "days": [] }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.1.14/swiper-bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════
+   SPEED       cube 轉動時間 (ms)
+   ZOOM_FIX    轉動途中反向放大，抵消透視縮細
+   AUTOPLAY    每張停留時間
+   ══════════════════════════════════════════════════════════ */
+const SPEED = 1000;
+const ZOOM_FIX = true;
+const AUTOPLAY = 7000;
+const MAX_SLIDES = 6;
+
+const MARK_SVG = `<svg class="mark" width="72" height="34" viewBox="0 0 72 34" fill="none">
+  <path d="M2 22 C 12 22, 14 12, 24 16 S 40 26, 50 18 S 62 8, 66 6" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M58 4 L 67 5 L 63 13" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>`;
+
+const swiperEl = document.querySelector('.swiper');
+const wrap = swiperEl.querySelector('.swiper-wrapper');
+const overlay = document.getElementById('overlay');
+const $$ = (el, sel) => el.querySelectorAll(sel);
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function contentHtml(x, day) {
+  const item = x.item;
+  const href = item.detailUrl || item.url || day.digestUrl || '#';
+  const kicker = x.kind === 'pod'
+    ? `PODCAST · ${esc(item.show || '')}`
+    : `TOP STORY${item.source ? ' · ' + esc(item.source) : ''}`;
+  const sig = item.signal ? `<span class="sig">${esc(item.signal)}</span>` : '';
+  return `<div class="slide-content">
+    ${MARK_SVG}
+    <div class="kicker anim">${kicker}${sig}</div>
+    <a class="headline anim" href="${esc(href)}">${esc(item.title)}</a>
+    ${item.desc ? `<p class="desc anim">${esc(item.desc)}</p>` : ''}
+    <a class="cta anim" href="${esc(href)}">白話詳解 <span class="arr">→</span></a>
+  </div>`;
+}
+
+let tlEnter = null;
+let compTween = null;
+
+/* 落地入場：mark → kicker → headline → desc → cta，fade + 微移 */
+function playEntrance(root) {
+  if (tlEnter) tlEnter.kill();
+  tlEnter = gsap.timeline({ defaults: { ease: 'power3.out' } })
+    .fromTo($$(root, '.mark'),     { x: -30, autoAlpha: 0 }, { x: 0, autoAlpha: .9, duration: .5 })
+    .fromTo($$(root, '.kicker'),   { x: -40, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .5 }, '<.08')
+    .fromTo($$(root, '.headline'), { x: -55, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .6 }, '<.08')
+    .fromTo($$(root, '.desc'),     { x: -40, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .55 }, '<.1')
+    .fromTo($$(root, '.cta'),      { y: 14,  autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .45 }, '<.12');
+}
+
+/* 反向縮放補償：cube 轉一半透視縮細，即時放大返 → 只見「左右轉」 */
+function counterZoom() {
+  if (!ZOOM_FIX) return;
+  if (compTween) compTween.kill();
+  const P = parseFloat(getComputedStyle(swiperEl).perspective) || 2600;
+  const fix = 1 + (0.147 * swiperEl.clientWidth) / P;   // 45° 時面中心後退 ≈ 0.147 × 闊度
+  compTween = gsap.fromTo(swiperEl, { scale: 1 },
+    { scale: fix, duration: SPEED / 2000, ease: 'sine.inOut', yoyo: true, repeat: 1,
+      onComplete: () => gsap.set(swiperEl, { scale: 1 }) });
+}
+
+async function boot() {
+  let data;
+  try {
+    const res = await fetch('data/homepage.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+  } catch (e) {
+    data = JSON.parse(document.getElementById('fallback-data').textContent);
+  }
+
+  const day = (data.days && data.days[0]) || { highlights: [], podcasts: [] };
+  document.getElementById('nav-date').textContent = day.dateLabel || '';
+  document.getElementById('nav-digest').href = day.digestUrl || 'archive.html';
+
+  /* 今日 top stories 行先，播客跟尾 */
+  let items = [
+    ...(day.highlights || []).map(h => ({ item: h, kind: 'story' })),
+    ...(day.podcasts || []).map(p => ({ item: p, kind: 'pod' })),
+  ].slice(0, MAX_SLIDES);
+  if (!items.length) {
+    items = [{ item: { title: 'NO MORE AI FOMO', desc: '' }, kind: 'story' }];
+  }
+
+  /* cube 面：淨係 art + tint（文字全部喺 overlay，轉動時見純「影像」面轉） */
+  wrap.innerHTML = items.map((_, i) =>
+    `<div class="swiper-slide"><div class="art p${i % 4}"></div><div class="tint"></div></div>`
+  ).join('');
+
+  /* 尾部 clone 第 1 塊 → 轉到尾無縫瞬移返起點，永遠同一方向轉
+     （cube + loop:true 有 glitch，所以自己做；靜止時只見正面，瞬移零閃爍） */
+  wrap.appendChild(wrap.children[0].cloneNode(true));
+  const LAST = wrap.children.length - 1;
+  const mapIdx = i => (i === LAST ? 0 : i);
+
+  function renderOverlay(idx) {
+    overlay.innerHTML = contentHtml(items[mapIdx(idx)], day);
+    overlay.style.visibility = 'visible';
+    playEntrance(overlay);
+  }
+
+  const swiper = new Swiper(swiperEl, {
+    effect: 'cube',
+    speed: SPEED,
+    cubeEffect: { shadow: false, slideShadows: false },
+    autoplay: { delay: AUTOPLAY, disableOnInteraction: false },
+    resistanceRatio: .65,
+    grabCursor: true,
+    preventClicks: false,
+    preventClicksPropagation: false,
+    threshold: 6,
+    on: { init() { renderOverlay(0); } }
+  });
+
+  /* 轉場開始：overlay 文字跟方向漂走淡出，cube 面接手轉動 */
+  swiper.on('slideChangeTransitionStart', () => {
+    const dir = swiper.activeIndex > swiper.previousIndex ? 1 : -1;
+    if (tlEnter) tlEnter.kill();
+    gsap.to($$(overlay, '.anim, .mark'), {
+      autoAlpha: 0, x: dir > 0 ? -55 : 55,
+      duration: SPEED * .6 / 1000, ease: 'power2.in', overwrite: true,
+      onComplete: () => { overlay.style.visibility = 'hidden'; }
+    });
+    counterZoom();
+  });
+
+  /* 轉場完結：clone → 瞬移返起點；然後 overlay 入場 */
+  swiper.on('slideChangeTransitionEnd', () => {
+    if (swiper.activeIndex === LAST) {
+      swiper.slideTo(0, 0, false);
+      if (swiper.autoplay) swiper.autoplay.start();
+    }
+    renderOverlay(swiper.activeIndex);
+    updateDots();
+  });
+
+  /* 圓點 */
+  const dots = document.getElementById('dots');
+  dots.innerHTML = items.map((_, i) =>
+    `<button class="dot" data-i="${i}" aria-label="第 ${i + 1} 則"></button>`).join('');
+  const updateDots = () => {
+    dots.querySelectorAll('.dot').forEach((d, i) =>
+      d.classList.toggle('active', i === mapIdx(swiper.activeIndex)));
+  };
+  updateDots();
+  dots.addEventListener('click', e => {
+    const b = e.target.closest('.dot');
+    if (b && !swiper.animating) swiper.slideTo(+b.dataset.i);
+  });
+
+  function goNext() { if (!swiper.animating) swiper.slideNext(); }
+  function goPrev() {
+    if (swiper.animating) return;
+    if (swiper.activeIndex === 0) {
+      swiper.slideTo(LAST, 0, false);   /* clone = 第 1 塊：瞬移過去再向後轉 */
+      swiper.slidePrev();
+    } else swiper.slidePrev();
+  }
+  document.querySelector('.next-btn').onclick = goNext;
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') goNext();
+    if (e.key === 'ArrowLeft') goPrev();
+  });
+
+  /* 拖動：即刻收 overlay，cube 面接手；放手冇轉頁就還原 */
+  let dragged = false;
+  swiper.on('sliderFirstMove', () => {
+    dragged = true;
+    if (tlEnter) tlEnter.kill();
+    overlay.style.visibility = 'hidden';
+  });
+  swiper.on('touchEnd', () => {
+    setTimeout(() => { dragged = false; }, 60);
+    setTimeout(() => {
+      if (!swiper.animating && overlay.style.visibility === 'hidden') {
+        renderOverlay(swiper.activeIndex);
+        updateDots();
+      }
+    }, SPEED + 60);
+  });
+  document.addEventListener('click', e => {
+    if (dragged) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  /* hover 內容區停 autoplay（唔用 pauseOnMouseEnter：全屏 swiper 會永遠 pause） */
+  document.addEventListener('pointerover', e => {
+    if (e.target.closest('.slide-content')) swiper.autoplay.stop();
+  });
+  document.addEventListener('pointerout', e => {
+    if (e.target.closest('.slide-content') &&
+        !(e.relatedTarget && e.relatedTarget.closest('.slide-content'))) {
+      swiper.autoplay.start();
+    }
+  });
+}
+boot();
+</script>
+</body>
+</html>

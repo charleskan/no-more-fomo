@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NO MORE FOMO — Daily AI Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.1.14/swiper-bundle.min.css">
+<style>
+:root{
+  --bleed:16vh;      /* ← cube 上下「裁走」幾多（越大越似平面左右轉） */
+  --persp:2600px;    /* ← 透視距離：越大 = 縮放感越少 */
+  --line:rgba(255,255,255,.32);
+  --mono:"SF Mono", ui-monospace, Menlo, "Cascadia Code", monospace;
+  --pad-x:clamp(24px, 4.5vw, 64px);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;background:#0c0930;
+  font-family:'Orbitron','PingFang TC','Noto Sans TC',system-ui,sans-serif;color:#fff;
+  -webkit-font-smoothing:antialiased}
+
+/* ═══ 共用背景：fixed 喺 swiper 後面，唔會跟 cube 轉 ═══ */
+.bg{position:fixed;inset:0;z-index:0;background:
+  radial-gradient(120% 95% at 82% 8%, rgba(96,74,236,.50), transparent 55%),
+  radial-gradient(110% 85% at 12% 88%, rgba(64,44,178,.45), transparent 60%),
+  radial-gradient(150% 130% at 50% 45%, #251b70 0%, #160f49 46%, #0b0830 100%)}
+.bg::before{content:'';position:absolute;inset:-22%;
+  background:
+   linear-gradient(114deg, transparent 30%, rgba(140,128,255,.16) 41%, transparent 50%),
+   linear-gradient(118deg, transparent 54%, rgba(170,160,255,.12) 65%, transparent 74%),
+   linear-gradient(112deg, transparent 12%, rgba(90,80,220,.12) 20%, transparent 27%);
+  filter:blur(26px);animation:drift 16s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate3d(3%,-2.5%,0) rotate(.8deg)}}
+@media (prefers-reduced-motion:reduce){.bg::before{animation:none}}
+
+/* ═══ 3D 特效層：cube 純轉場用，slide 一律唔接受滑鼠
+   （Chrome 對 perspective+preserve-3d 嘅 hit-testing 有 bug，
+   所以互動全部交俾下面嘅 2D overlay）═══ */
+.stage{position:fixed;inset:0;z-index:1;overflow:hidden}
+.swiper{position:absolute;left:0;top:calc(var(--bleed) * -1);width:100%;
+  height:calc(100% + var(--bleed) * 2)}
+.swiper.swiper-3d{perspective:var(--persp)}
+.swiper-slide{background:transparent;overflow:hidden}
+.swiper-cube .swiper-slide{pointer-events:none!important}
+
+/* cube 面上一層極淡玻璃感 + 左右邊光，轉動時先睇得出「面」喺度轉 */
+.tint{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg, rgba(130,124,255,.05), rgba(5,3,26,.20) 88%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),
+             inset 3px 0 18px rgba(165,155,255,.10),
+             inset -3px 0 18px rgba(0,0,24,.30)}
+
+/* ═══ 2D 互動層：靜止時內容display喺度、hover/click 100% 準。
+   同 .swiper 完全一樣嘅盒（含 bleed），令 .frame 座標一致 ═══ */
+#overlay{position:fixed;left:0;top:calc(var(--bleed) * -1);width:100%;
+  height:calc(100% + var(--bleed) * 2);z-index:2;pointer-events:none}
+#overlay a{pointer-events:auto}
+
+/* ═══ 頂部導覽（Sequoia 式：mono 大寫 + 下面一條幼白線）═══ */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:24px var(--pad-x) 18px;
+  border-bottom:1px solid rgba(255,255,255,.35)}
+.wordmark{font-family:var(--mono);font-weight:700;font-size:16px;
+  letter-spacing:.14em;white-space:nowrap;color:#fff;text-decoration:none}
+.wordmark b{opacity:.55;font-weight:700}
+.topnav-links{display:flex;align-items:center;gap:clamp(18px,3vw,44px);
+  font-family:var(--mono);font-size:12px;letter-spacing:.22em}
+.topnav-links a{color:rgba(255,255,255,.85);text-decoration:none;
+  padding-bottom:3px;border-bottom:1px solid transparent;transition:.2s}
+.topnav-links a:hover{color:#fff;border-bottom-color:#fff}
+.topnav-date{color:rgba(255,255,255,.5);font-family:var(--mono);
+  font-size:12px;letter-spacing:.22em}
+
+/* 內容框：只佔中間可視嘅 100vh（頂部讓開 menubar） */
+.frame{position:absolute;left:0;top:var(--bleed);width:100%;
+  height:calc(100% - var(--bleed) * 2);
+  padding:clamp(86px,13vh,124px) var(--pad-x) clamp(18px,4.5vh,48px);
+  display:flex;flex-direction:column}
+
+/* ═══ 看板（每日 top podcasts + top stories）═══ */
+.s-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.page-title{margin:0;font-weight:900;font-size:clamp(38px,8.4vh,104px);
+  letter-spacing:.015em;line-height:.95;
+  text-shadow:0 4px 30px rgba(90,70,255,.35)}
+.logo26{display:flex;align-items:center;gap:.28em;font-weight:800;
+  font-size:clamp(18px,3.4vh,34px);letter-spacing:.04em;margin-top:.3em}
+.logo26 i{width:.62em;height:.86em;background:#fff;
+  clip-path:polygon(0 0,46% 0,100% 100%,54% 100%)}
+
+.groups{display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(22px,4.5vw,80px);margin-top:clamp(14px,3.5vh,36px)}
+.g-head{display:flex;align-items:center;gap:.6em;font-weight:800;
+  font-size:clamp(14px,2.6vh,26px);letter-spacing:.14em;
+  background:rgba(9,6,40,.55);padding:.5em .75em;border-radius:3px}
+.g-ico{width:.95em;height:.95em;background:var(--gc);
+  clip-path:polygon(0 0,100% 0,74% 100%,0 74%)}
+.group.left{--gc:#ff7a1c}
+.group.right{--gc:#3ec2ff}
+
+.cols,.row{display:grid;align-items:center;
+  grid-template-columns:1.5em 2.55em minmax(0,1fr) 5.6em 3.6em;
+  column-gap:.55em}
+.cols{margin-top:.85em;padding-bottom:.6em;border-bottom:1px solid var(--line);
+  font-size:clamp(10px,1.75vh,15px);font-weight:700;letter-spacing:.14em;
+  color:rgba(255,255,255,.92)}
+.cols span:nth-child(1){grid-column:4}
+.cols span:nth-child(2){grid-column:5}
+.row{font-size:clamp(14px,2.45vh,22px);font-weight:700;
+  padding:1.05em .35em;margin:0 -.35em;border-bottom:1px solid var(--line);
+  border-radius:4px;color:inherit;text-decoration:none;
+  transition:background .2s;cursor:pointer}
+a.row:hover,a.row:focus-visible{background:rgba(255,255,255,.09);outline:none}
+.rank{font-weight:800}
+.tlogo{width:2em;height:2em;border-radius:.3em;display:grid;place-items:center;
+  background:var(--c,#333);color:var(--fg,#fff)}
+.tlogo b{font-size:.36em;letter-spacing:.03em}
+.tname{letter-spacing:.03em;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.m1,.m2{letter-spacing:.05em;font-size:.82em;white-space:nowrap}
+
+.s-foot{margin-top:auto;display:flex;justify-content:space-between;
+  font-size:clamp(10px,1.8vh,15px);font-weight:700;letter-spacing:.3em;
+  color:rgba(255,255,255,.9);padding-top:12px}
+
+/* ═══ 日期卡（broadcast 標題卡，好快就轉走）═══ */
+.frame.center{justify-content:center}
+.kicker{font-weight:800;letter-spacing:.34em;
+  font-size:clamp(12px,2.2vh,20px);color:rgba(255,255,255,.75);
+  margin-bottom:clamp(10px,2.4vh,24px)}
+.mega{font-weight:900;line-height:1.05;letter-spacing:.012em;
+  font-size:clamp(46px,17.5vh,210px);
+  text-shadow:0 6px 40px rgba(80,60,255,.30)}
+.mega .line{white-space:nowrap}
+.mega-sub{margin-top:clamp(14px,3.5vh,34px)}
+.mega-sub a{display:inline-block;color:#fff;text-decoration:none;
+  font-weight:800;letter-spacing:.22em;font-size:clamp(12px,2.2vh,20px);
+  border:1px solid rgba(255,255,255,.4);border-radius:4px;
+  padding:.7em 1.2em;background:rgba(12,8,50,.45);transition:.25s}
+.mega-sub a:hover,.mega-sub a:focus-visible{background:rgba(255,255,255,.16);
+  border-color:#fff;outline:none}
+
+/* ═══ UI ═══ */
+.ui{position:fixed;right:22px;bottom:20px;z-index:5;display:flex;gap:10px}
+.nav{width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.35);
+  background:rgba(12,8,50,.45);color:#fff;font-size:22px;line-height:1;
+  cursor:pointer;transition:.25s;backdrop-filter:blur(4px)}
+.nav:hover,.nav:focus-visible{background:rgba(255,255,255,.18);border-color:#fff;outline:none}
+.hint{position:fixed;left:24px;bottom:28px;z-index:5;font-size:11px;
+  letter-spacing:.28em;color:rgba(255,255,255,.45);font-weight:700}
+
+@media (max-width:860px){
+  :root{--bleed:10vh}
+  .groups{grid-template-columns:1fr;gap:14px;margin-top:12px}
+  .row{font-size:clamp(12px,1.8vh,16px);padding:.68em 0}
+  .cols{margin-top:.5em}
+  .page-title{font-size:clamp(32px,6.5vh,64px)}
+  .mega{font-size:clamp(36px,11vw,120px)}
+}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+
+<nav class="topnav">
+  <a class="wordmark" href="index.html">NO MORE <b>AI</b> FOMO</a>
+  <div class="topnav-links">
+    <span class="topnav-date" id="nav-date"></span>
+    <a id="nav-digest" href="archive.html">TODAY'S DIGEST</a>
+    <a href="archive.html">ARCHIVE</a>
+  </div>
+</nav>
+
+<div class="stage">
+  <div class="swiper">
+    <!-- slides 由 data/homepage.json 動態生成：每日一對（日期卡 → 看板），最多 7 日 -->
+    <div class="swiper-wrapper"></div>
+  </div>
+</div>
+
+<!-- 2D 互動層：靜止時嘅內容喺呢度（可 hover/click）；轉動時收埋，cube 面接手 -->
+<div id="overlay"></div>
+
+<div class="ui">
+  <button class="nav prev" aria-label="上一頁">‹</button>
+  <button class="nav next" aria-label="下一頁">›</button>
+</div>
+<div class="hint">DRAG · ← → · AUTO LOOP</div>
+
+<!-- fetch 失敗（例如 file:// 直開）時的後備資料 -->
+<script type="application/json" id="fallback-data">
+{ "days": [] }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.1.14/swiper-bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+/* ══════════════════════════════════════════════════════════
+   可調參數
+   ────────────────────────────────────────────────────────
+   SPEED           cube 轉動時間 (ms)
+   ZOOM_FIX        true = 轉動途中自動反向放大，抵消透視縮細
+   DATE_DELAY      日期卡停留時間（好快就轉走）
+   BOARD_DELAY     看板停留時間
+   MAX_DAYS        最多顯示幾多日（一星期）
+   ══════════════════════════════════════════════════════════ */
+const SPEED = 1000;
+const ZOOM_FIX = true;
+const DATE_DELAY = 1500;
+const BOARD_DELAY = 9000;
+const MAX_DAYS = 7;
+
+const WEEKDAYS = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+const BADGE_COLORS = [
+  { c: '#e2012d' }, { c: '#f5811f' }, { c: '#151515', fg: '#ff3b30' },
+  { c: '#a98c5d', fg: '#141414' }, { c: '#0d0d0d', fg: '#18cfd4' },
+  { c: '#1f66e5' }, { c: '#04a24c' }, { c: '#c4344b' },
+];
+
+const swiperEl = document.querySelector('.swiper');
+const wrap = swiperEl.querySelector('.swiper-wrapper');
+const overlay = document.getElementById('overlay');
+
+const $$ = (el, sel) => el.querySelectorAll(sel);
+
+/* ── data → HTML ── */
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function badgeText(item) {
+  return item.badge || item.source ||
+    (item.show || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 3).toUpperCase();
+}
+function rowHtml(item, i) {
+  const { c, fg } = BADGE_COLORS[i % BADGE_COLORS.length];
+  const style = `--c:${c}` + (fg ? `;--fg:${fg}` : '');
+  const href = item.detailUrl || item.url || '#';
+  return `<a class="row anim" href="${esc(href)}">` +
+    `<b class="rank">${i + 1}</b>` +
+    `<span class="tlogo" style="${style}"><b>${esc(badgeText(item))}</b></span>` +
+    `<span class="tname" title="${esc(item.title)}">${esc(item.title)}</span>` +
+    `<span class="m1">${esc(item.signal || '—')}</span>` +
+    `<span class="m2">${esc(item.source || '')}</span></a>`;
+}
+function groupHtml(side, label, items) {
+  return `<section class="group ${side}">` +
+    `<div class="g-head anim"><span class="g-ico"></span>${label}</div>` +
+    `<div class="cols anim"><span>SIGNAL</span><span>SRC</span></div>` +
+    (items || []).slice(0, 5).map(rowHtml).join('') +
+    `</section>`;
+}
+function weekdayOf(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  return isNaN(d) ? '' : WEEKDAYS[d.getUTCDay()];
+}
+/* 內容框（.frame）本體：slide 同 overlay 共用同一段 HTML → 位置像素級一致 */
+function dateFrameHtml(day) {
+  return `<div class="frame center">` +
+    `<div class="kicker anim">NO MORE FOMO</div>` +
+    `<div class="mega"><div class="line anim">${esc(weekdayOf(day.date))}</div>` +
+    `<div class="line anim">${esc(day.dateLabel || day.date)}</div></div>` +
+    `<div class="mega-sub"><a class="anim" href="${esc(day.digestUrl || '#')}">READ DIGEST →</a></div>` +
+    `</div>`;
+}
+function boardFrameHtml(day, i) {
+  const title = i === 0 ? 'TODAY' : esc(day.dateLabel || day.date);
+  return `<div class="frame">` +
+    `<header class="s-head"><h1 class="page-title anim">${title}</h1>` +
+    `<div class="logo26 anim"><i></i>${esc(weekdayOf(day.date).slice(0, 3))}</div></header>` +
+    `<main class="groups">` +
+    groupHtml('left', 'PODCASTS', day.podcasts) +
+    groupHtml('right', 'TOP STORIES', day.highlights) +
+    `</main>` +
+    `<footer class="s-foot"><span class="anim">NO MORE FOMO</span>` +
+    `<span class="anim">${esc(day.dateLabel || day.date)}</span></footer>` +
+    `</div>`;
+}
+function brandFrameHtml() {
+  return `<div class="frame center">` +
+    `<div class="mega"><div class="line anim">NO MORE</div>` +
+    `<div class="line anim">FOMO</div></div></div>`;
+}
+
+let tlEnter = null;
+let compTween = null;
+
+/* ── 入場動畫（落地後喺 overlay 度播；只有看板有）── */
+function playEntrance(root) {
+  if (tlEnter) tlEnter.kill();
+  const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+  /* 逐條由左到右 fade 入（WOW / fadeInLeft 感覺）：
+     標題 → 左組 header → 左組每行 stagger → 右組 header → 右組每行 stagger */
+  tl.fromTo($$(root, '.page-title'), { x: -90, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .6 })
+    .fromTo($$(root, '.logo26'),     { x: 50,  autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .5 }, '<.1')
+    .fromTo($$(root, '.left .g-head, .left .cols'),
+            { x: -60, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .45, stagger: .08 }, '-=.28')
+    .fromTo($$(root, '.left .row'),
+            { x: -85, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .5,  stagger: .09 }, '-=.28')
+    .fromTo($$(root, '.right .g-head, .right .cols'),
+            { x: -60, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .45, stagger: .08 }, '-=.62')
+    .fromTo($$(root, '.right .row'),
+            { x: -85, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: .5,  stagger: .09 }, '-=.28')
+    .fromTo($$(root, '.s-foot .anim'),
+            { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .4, stagger: .08 }, '-=.35');
+  tlEnter = tl;
+}
+
+/* ── 反向縮放補償：cube 轉到一半透視會縮細，呢度即時放大返，
+      令人只見「左右轉」、見唔到「縮細→放大」── */
+function counterZoom() {
+  if (!ZOOM_FIX) return;
+  if (compTween) compTween.kill();
+  const P = parseFloat(getComputedStyle(swiperEl).perspective) || 2600;
+  const fix = 1 + (0.147 * swiperEl.clientWidth) / P;   // 45° 時面中心後退距離 ≈ 0.147 × 闊度
+  compTween = gsap.fromTo(swiperEl, { scale: 1 },
+    { scale: fix, duration: SPEED / 2000, ease: 'sine.inOut', yoyo: true, repeat: 1,
+      onComplete: () => gsap.set(swiperEl, { scale: 1 }) });
+}
+
+async function boot() {
+  let data;
+  try {
+    const res = await fetch('data/homepage.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+  } catch (e) {
+    data = JSON.parse(document.getElementById('fallback-data').textContent);
+  }
+
+  /* ── 起 slides：每日一對（日期卡 → 看板），最多 MAX_DAYS 日。
+     frames[] 同 slides 一一對應，overlay 靜止時攞嚟 render ── */
+  const days = (data.days || []).slice(0, MAX_DAYS);
+
+  /* menubar：日期 + 今日 digest 連結 */
+  if (days[0]) {
+    document.getElementById('nav-date').textContent = days[0].dateLabel || '';
+    if (days[0].digestUrl) document.getElementById('nav-digest').href = days[0].digestUrl;
+  }
+
+  const frames = [];   // { type, html }
+  if (days.length) {
+    days.forEach((d, i) => {
+      frames.push({ type: 'date',  html: dateFrameHtml(d) });
+      frames.push({ type: 'board', html: boardFrameHtml(d, i) });
+    });
+  } else {
+    frames.push({ type: 'date', html: brandFrameHtml() });
+  }
+  wrap.innerHTML = frames.map(f =>
+    `<div class="swiper-slide" data-type="${f.type}" data-swiper-autoplay="${f.type === 'date' ? DATE_DELAY : BOARD_DELAY}">` +
+    `<div class="tint"></div>${f.html}</div>`).join('');
+
+  /* 尾部 clone 第 1 塊 → 轉到尾就無縫瞬移返起點，永遠向同一方向轉 */
+  wrap.appendChild(wrap.children[0].cloneNode(true));
+  frames.push(frames[0]);
+  const LAST = wrap.children.length - 1;   /* clone 嘅 index */
+
+  /* 看板嘅 cube 面永遠留空（淨係玻璃 tint）——內容由 overlay 負責；
+     日期卡嘅 cube 面有字，轉入轉出時「內容跟住面轉」嘅效果先出得返嚟 */
+  const hideFace = slide => gsap.set($$(slide, '.anim'), { autoAlpha: 0 });
+  const showFace = slide => gsap.set($$(slide, '.anim'), { clearProps: 'all' });
+
+  /* overlay render：靜止時把 active 內容display上 2D 層（可互動）。
+     同時收起底下嘅 cube 面內容，唔好兩層字疊埋（overlay 同 face 座標一致，
+     同一 tick 內換手 → 零閃爍） */
+  function renderOverlay(idx) {
+    const f = frames[idx];
+    overlay.innerHTML = f.html;
+    overlay.style.visibility = 'visible';
+    hideFace(wrap.children[idx]);   /* 用 wrap.children：init callback 時 swiper 變數未 ready */
+    if (f.type === 'board') {
+      playEntrance(overlay);            /* 看板：逐條 fadeInLeft */
+    } else {
+      gsap.set($$(overlay, '.anim'), { clearProps: 'all' });  /* 日期卡：即刻display */
+    }
+  }
+
+  const swiper = new Swiper(swiperEl, {
+    effect: 'cube',
+    speed: SPEED,
+    cubeEffect: { shadow: false, slideShadows: false },
+    autoplay: { delay: BOARD_DELAY, disableOnInteraction: false },
+    resistanceRatio: .65,
+    grabCursor: true,
+    on: {
+      init(s) {
+        s.slides.forEach(sl => { if (sl.dataset.type === 'board') hideFace(sl); });
+        renderOverlay(0);
+      }
+    }
+  });
+
+  /* 轉場開始：overlay 內容 fade out／收埋，cube 面接手轉動 */
+  swiper.on('slideChangeTransitionStart', () => {
+    const dir  = swiper.activeIndex > swiper.previousIndex ? 1 : -1;
+    const prev = swiper.slides[swiper.previousIndex];
+    const next = swiper.slides[swiper.activeIndex];
+    if (tlEnter) tlEnter.kill();
+
+    /* 舊內容點樣退場：
+       - 看板：overlay 上 fade out + 跟轉動方向漂走
+       - 日期卡：overlay 即刻收埋、同一 tick 由 cube 面接手（面上有字跟住轉），
+         面上內容再跟方向 fade 走 */
+    if (prev && prev.dataset.type === 'date') {
+      overlay.style.visibility = 'hidden';
+      showFace(prev);
+      gsap.fromTo($$(prev, '.anim'), { autoAlpha: 1, x: 0 }, {
+        autoAlpha: 0, x: dir > 0 ? -55 : 55,
+        duration: SPEED * .6 / 1000, ease: 'power2.in'
+      });
+    } else {
+      gsap.to($$(overlay, '.anim'), {
+        autoAlpha: 0, x: dir > 0 ? -55 : 55,
+        duration: SPEED * .6 / 1000, ease: 'power2.in', overwrite: true,
+        onComplete: () => { overlay.style.visibility = 'hidden'; }
+      });
+    }
+    if (next.dataset.type === 'date') showFace(next);
+    else hideFace(next);               /* 看板面轉入時保持空面，落地先由 overlay 入字 */
+    counterZoom();
+  });
+
+  /* 轉場完結：去到 clone 就無縫瞬移返起點；然後 overlay 接手display內容 */
+  swiper.on('slideChangeTransitionEnd', () => {
+    if (swiper.activeIndex === LAST) {
+      swiper.slideTo(0, 0, false);
+      if (swiper.autoplay) swiper.autoplay.start();
+      renderOverlay(0);
+    } else {
+      renderOverlay(swiper.activeIndex);
+    }
+  });
+
+  /* 真係拖過先擋 click（drag 完釋放喺 link 上唔好誤觸） */
+  let dragged = false;
+  swiper.on('sliderFirstMove', () => {
+    dragged = true;
+    /* 拖動開始：overlay 即刻收埋，交返俾 cube 面 */
+    if (tlEnter) tlEnter.kill();
+    overlay.style.visibility = 'hidden';
+    const active = swiper.slides[swiper.activeIndex];
+    if (active && active.dataset.type === 'date') showFace(active);
+  });
+  swiper.on('touchEnd', () => {
+    setTimeout(() => { dragged = false; }, 60);
+    /* 拖完冇轉頁（彈返原位）→ overlay display返 */
+    setTimeout(() => {
+      if (!swiper.animating && overlay.style.visibility === 'hidden') {
+        renderOverlay(swiper.activeIndex);
+      }
+    }, SPEED + 60);
+  });
+  document.addEventListener('click', e => {
+    if (dragged) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  /* hover 喺列表上就停 autoplay，離開先繼續轉 —— 想㩒 link 唔會俾佢轉走 */
+  document.addEventListener('pointerover', e => {
+    if (e.target.closest('.groups')) swiper.autoplay.stop();
+  });
+  document.addEventListener('pointerout', e => {
+    if (e.target.closest('.groups') &&
+        !(e.relatedTarget && e.relatedTarget.closest('.groups'))) {
+      swiper.autoplay.start();
+    }
+  });
+
+  function goNext() {
+    if (swiper.animating) return;
+    swiper.slideNext();
+  }
+  function goPrev() {
+    if (swiper.animating) return;
+    if (swiper.activeIndex === 0) {
+      /* clone = 第 1 塊內容：瞬移過去，再向後轉 → 向後都可以無限轉 */
+      swiper.slideTo(LAST, 0, false);
+      swiper.slidePrev();
+    } else {
+      swiper.slidePrev();
+    }
+  }
+  document.querySelector('.next').onclick = goNext;
+  document.querySelector('.prev').onclick = goPrev;
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') goNext();
+    if (e.key === 'ArrowLeft')  goPrev();
+  });
+}
+boot();
+</script>
+</body>
+</html>

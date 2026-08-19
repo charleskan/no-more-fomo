@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-08-07",
+  "days": [
+    {
+      "date": "2026-08-07",
+      "dateLabel": "07 AUG",
+      "digestUrl": "2026-08-07-zh.html",
+      "podcasts": [
+        { "show": "Latent Space", "badge": "LS", "title": "Unpacking ChatGPT Work — harness 深挖", "signal": "538 ♥", "source": "POD", "detailUrl": "2026-08-07-zh--latent-chatgpt-work.html" },
+        { "show": "Dwarkesh", "badge": "DW", "title": "為什麼算力可能貴 10 倍", "source": "POD", "detailUrl": "2026-08-07-zh--dwarkesh-compute-10x.html" },
+        { "show": "Training Data", "badge": "TD", "title": "Chai Discovery 的苦澀教訓：藥物設計也是規模問題", "source": "POD", "detailUrl": "2026-08-07-zh--training-chai-discovery.html" }
+      ],
+      "highlights": [
+        { "title": "OpenAI 把 GPT-5.6 Sol 推給 ChatGPT 全體用戶", "signal": "14.5K ♥", "source": "X", "detailUrl": "2026-08-07-zh--gpt56-sol-everywhere.html" },
+        { "title": "Agent Plugins：跨所有 Agent 通用的開放標準", "signal": "5.5K ♥", "source": "X", "detailUrl": "2026-08-07-zh--agent-plugins-standard.html" },
+        { "title": "「其實根本沒人在用 AI Agent」成當日熱議", "signal": "3.8K ♥", "source": "X", "detailUrl": "2026-08-07-zh--nobody-uses-agents.html" },
+        { "title": "人類審批 AI Agent 指令，漏放三分之一威脅", "signal": "HN 259", "source": "HN", "detailUrl": "2026-08-07-zh--human-approval-misses.html" },
+        { "title": "阿里 Wan3.0 視頻模型開啟公測", "signal": "1.8K ♥", "source": "X", "detailUrl": "2026-08-07-zh--wan3-video.html" }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "dateLabel": "06 AUG",
+      "digestUrl": "2026-08-06-zh.html",
+      "podcasts": [
+        { "show": "No Priors", "badge": "NP", "title": "無界的 AI 芯片——AMD 與 Anthropic", "source": "POD", "detailUrl": "2026-08-06-zh--no-priors-amd-anthropic.html" },
+        { "show": "Latent Space", "badge": "LS", "title": "拆解 ChatGPT Work——shloked 的 harness 深挖", "source": "POD", "detailUrl": "2026-08-06-zh--chatgpt-work-harness.html" }
+      ],
+      "highlights": [
+        { "title": "Jeff Dean 創辦 Discovery Loop，自動化 ML 研究", "signal": "14.5K ♥", "source": "X", "detailUrl": "2026-08-06-zh--discovery-loop.html" },
+        { "title": "OpenAI 測試智能體自建「留言板」— AISI 事故起源", "signal": "445 ♥", "source": "X", "detailUrl": "2026-08-06-zh--hf-incident-swarm.html" },
+        { "title": "DeepSeek V4 Flash 成本焦點——隨即宣布漲價", "signal": "602 ♥", "source": "X", "detailUrl": "2026-08-06-zh--deepseek-v4-flash.html" },
+        { "title": "Rust 採納官方 LLM 政策：可協助、不可創作", "signal": "HN 109", "source": "HN", "detailUrl": "2026-08-06-zh--rust-llm-policy.html" },
+        { "title": "《立場：LLM 不會跳躍》— HN 就創造力激辯", "signal": "HN 247", "source": "HN", "detailUrl": "2026-08-06-zh--llms-cant-jump.html" }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "dateLabel": "05 AUG",
+      "digestUrl": "2026-08-05-zh.html",
+      "podcasts": [
+        { "show": "No Priors", "badge": "NP", "title": "Anthropic 的 $100 億雲協議、馬斯克談特斯拉 AI", "source": "POD", "detailUrl": "2026-08-05-zh--no-priors-anthropic-cloud.html" },
+        { "show": "Training Data", "badge": "TD", "title": "Chai Discovery 的苦澀教訓——藥物設計也是縮放問題", "source": "POD", "detailUrl": "2026-08-05-zh--chai-discovery.html" }
+      ],
+      "highlights": [
+        { "title": "英國 AISI 披露首起真實世界 AI 智能體事故", "signal": "2.9K ♥", "source": "X", "detailUrl": "2026-08-05-zh--aisi-incident.html" },
+        { "title": "Cursor 開源 Mixture-of-Kittens：MoE 訓練 megakernel", "signal": "4.7K ♥", "source": "X", "detailUrl": "2026-08-05-zh--mixture-of-kittens.html" },
+        { "title": "Bending Spoons 以 $12.85 億收購 Airtable", "signal": "5.7K ♥", "source": "X", "detailUrl": "2026-08-05-zh--airtable-bending-spoons.html" },
+        { "title": "筆記本級的 Qwen 3.8 小模型要來了", "signal": "1.8K ♥", "source": "X", "detailUrl": "2026-08-05-zh--qwen-laptop-models.html" },
+        { "title": "Theo：Luna 降價 80% 後「基本免費」", "signal": "3.0K ♥", "source": "X", "detailUrl": "2026-08-05-zh--luna-price-cut.html" }
+      ]
+    }
+  ]
+}

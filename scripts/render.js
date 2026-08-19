@@ -46,15 +46,15 @@ function inlineFmt(text) {
 // To support another language, add its name to each entry; a heading with no
 // name for the page language falls back to the heading as written in the md.
 const SECTIONS = [
-  { id: 'highlights', names: { en: 'Top Highlights', zh: '今日要点' } },
-  { id: 'models', names: { en: 'Models & Releases', zh: '模型与发布' } },
-  { id: 'tools', names: { en: 'Tools & Demos', zh: '工具与演示' } },
+  { id: 'highlights', names: { en: 'Top Highlights', zh: '今日要點' } },
+  { id: 'models', names: { en: 'Models & Releases', zh: '模型與發佈' } },
+  { id: 'tools', names: { en: 'Tools & Demos', zh: '工具與演示' } },
   { id: 'agents', names: { en: 'AI Agents', zh: 'AI Agents' } },
-  { id: 'labs', names: { en: 'Lab Updates', zh: '实验室动态' } },
+  { id: 'labs', names: { en: 'Lab Updates', zh: '實驗室動態' } },
   { id: 'podcasts', names: { en: 'Podcasts', zh: '播客' } },
-  { id: 'hn', names: { en: 'HN Threads', zh: 'HN 讨论' } },
-  { id: 'industry', names: { en: 'Industry', zh: '行业动态' } },
-  { id: 'hf-papers', names: { en: 'HF Trending Papers', zh: 'HF 热门论文' } },
+  { id: 'hn', names: { en: 'HN Threads', zh: 'HN 討論' } },
+  { id: 'industry', names: { en: 'Industry', zh: '行業動態' } },
+  { id: 'hf-papers', names: { en: 'HF Trending Papers', zh: 'HF 熱門論文' } },
 ];
 const sectionMap = {};
 for (const s of SECTIONS)
@@ -62,6 +62,14 @@ for (const s of SECTIONS)
 // Also match common alternate headings
 sectionMap['Podcasts (Last 7 Days)'] = sectionMap['Podcasts'];
 sectionMap['播客 (近 7 天)'] = sectionMap['播客'];
+// 簡體 alias（舊 md / LLM 偶然寫簡體時的保險）
+sectionMap['今日要点'] = sectionMap['今日要點'];
+sectionMap['模型与发布'] = sectionMap['模型與發佈'];
+sectionMap['工具与演示'] = sectionMap['工具與演示'];
+sectionMap['实验室动态'] = sectionMap['實驗室動態'];
+sectionMap['HN 讨论'] = sectionMap['HN 討論'];
+sectionMap['行业动态'] = sectionMap['行業動態'];
+sectionMap['HF 热门论文'] = sectionMap['HF 熱門論文'];
 
 function matchSection(heading) {
   // Exact match first
@@ -313,8 +321,8 @@ const highlightsSection = sections.find(s => s.meta.id === 'highlights');
 const contentSections = sections.filter(s => s.meta.id !== 'highlights');
 
 // Extract footer from raw md (support both EN and ZH)
-const footerMatch = md.match(/^((?:Sources|来源):.+)$/m);
-const totalMatch = md.match(/^((?:Total|总计):.+)$/m);
+const footerMatch = md.match(/^((?:Sources|来源|來源):.+)$/m);
+const totalMatch = md.match(/^((?:Total|总计|總計):.+)$/m);
 const footerText = [footerMatch?.[1], totalMatch?.[1]].filter(Boolean).join(' | ');
 
 // Meta for header: just total items count, keep it short
@@ -366,10 +374,16 @@ if (fs.existsSync(indexTemplatePath)) {
     const correspondingMd = path.join(outputDir, d + '.md');
     if (fs.existsSync(correspondingMd)) {
       const content = fs.readFileSync(correspondingMd, 'utf-8');
-      const hlMatch = content.match(/^1\.\s+\*\*([^*]+)\*\*/m);
+      // 第一條 highlight：兼容「1. **」（舊）同「- **」（新）兩種格式
+      const hlMatch = content.match(/^(?:1\.|-)\s+\*\*([^*]+)\*\*/m);
       if (hlMatch) highlight = hlMatch[1];
-      const srcMatch = content.match(/^Total:\s*(.+)$/m);
+      // 條數：舊 md 有 Total: 行；新 md 冇 → 直接數 item 行
+      const srcMatch = content.match(/^(?:Total|总计|總計):\s*(.+)$/m);
       if (srcMatch) itemCount = srcMatch[1];
+      else {
+        const n = (content.match(/^(?:-|\d+\.)\s+\*\*/gm) || []).length;
+        if (n) itemCount = `${n} items`;
+      }
     }
     return `<a href="./${d}.html" class="date-card${latestClass}">
       <div class="date-card-date">${d}</div>
@@ -380,7 +394,8 @@ if (fs.existsSync(indexTemplatePath)) {
 
   const indexTemplate = fs.readFileSync(indexTemplatePath, 'utf-8');
   const indexHtml = indexTemplate.replace('{{INDEX_ENTRIES}}', entries);
-  const indexPath = path.join(outputDir, 'index.html');
+  // archive.html（唔係 index.html）：bucket root 嘅 index.html 係 homepage（site/index.html）
+  const indexPath = path.join(outputDir, 'archive.html');
   fs.writeFileSync(indexPath, indexHtml);
   console.log(`Written: ${indexPath}`);
 }
