@@ -184,7 +184,7 @@
       try { localStorage.setItem('fomo-theme', next); } catch(e) {}
     }
     var LOCALES = {{L10N_LOCALES}};
-    var LANG_NAMES = { '中': '中文', 'EN': 'ENGLISH' };
+    var LANG_NAMES = { zh: '中文', en: 'ENGLISH' };
     function splitLocale(base) {
       for (var i = 0; i < LOCALES.length; i++) {
         var suf = LOCALES[i].suffix;
@@ -228,8 +228,9 @@
       var sel = document.getElementById('langSelect');
       if (sel) {
         sel.innerHTML = LOCALES.map(function(lo, i) {
+          var name = LANG_NAMES[lo.code] || lo.label || (lo.code || '').toUpperCase();
           return '<option value="' + i + '"' + (i === cur.idx ? ' selected' : '') + '>' +
-            (LANG_NAMES[lo.label] || lo.label) + '</option>';
+            name + '</option>';
         }).join('');
       }
     })();

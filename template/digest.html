@@ -336,7 +336,7 @@
     }
 
     var LOCALES = {{L10N_LOCALES}};
-    var LANG_NAMES = { '中': '中文', 'EN': 'ENGLISH' };
+    var LANG_NAMES = { zh: '中文', en: 'ENGLISH' };
 
     /* Which locale does this basename end with? Returns {idx, stem}. */
     function splitLocale(base) {
@@ -394,8 +394,9 @@
       var sel = document.getElementById('langSelect');
       if (sel) {
         sel.innerHTML = LOCALES.map(function(l, i) {
+          var name = LANG_NAMES[l.code] || l.label || (l.code || '').toUpperCase();
           return '<option value="' + i + '"' + (i === cur.idx ? ' selected' : '') + '>' +
-            (LANG_NAMES[l.label] || l.label) + '</option>';
+            name + '</option>';
         }).join('');
       }
     })();

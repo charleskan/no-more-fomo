@@ -69,7 +69,7 @@ function applyL10n(html, lang) {
     .replace(/\{\{L10N_ATTRS:(\w+)\}\}/g, (_, k) => swapAttrs(k))
     .replace(/\{\{L10N:(\w+)\}\}/g, (_, k) => escAttr(T[k] != null ? T[k] : LOCALES.en[k]))
     .replace(/\{\{L10N_LOCALES\}\}/g, JSON.stringify(
-      Object.entries(LOCALES).map(([code, l]) => ({ code, suffix: l.suffix }))))
+      Object.entries(LOCALES).map(([code, l]) => ({ code, suffix: l.suffix, label: l.label }))))
     .replace(/\{\{L10N_LANG_TOGGLE\}\}/g, Object.values(LOCALES).map(l => l.label).join('/'));
 }
 
