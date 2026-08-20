@@ -1,25 +1,20 @@
 <!DOCTYPE html>
-<html data-theme="dark" data-lang="{{DETAIL_LANG}}">
+<html data-theme="light" data-lang="{{DETAIL_LANG}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{DETAIL_TITLE}} — {{L10N:explainerKicker}}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
   <style>
     :root, [data-theme="light"] {
-      --bg: #f4f2fc; --bg-image: none;
-      --surface: #ffffff; --surface-warm: #f8f6ff;
-      --border: #d4ccec; --border-subtle: #e4def4;
-      --text: #191238; --text-secondary: #453a6e; --text-muted: #7d74a3;
-      --accent: #6a4fe0; --accent-hover: #5238c0; --accent-subtle: rgba(106,79,224,0.09);
-      --green: #0e7fa8; --green-subtle: rgba(14,127,168,0.09);
-      --shadow-sm: 0 1px 2px rgba(25,18,56,0.05);
-      --shadow-md: 0 2px 8px rgba(25,18,56,0.08), 0 1px 2px rgba(25,18,56,0.05);
-      --radius: 10px; --radius-sm: 6px;
+      --bg: #f5f2ea; --bg-image: none;
+      --surface: #fbf9f4; --surface-warm: #efeadd;
+      --hairline: #d9d2c2; --hairline-soft: #e6e0d2;
+      --text: #17140e; --text-secondary: #4a4438; --text-muted: #8a8272;
+      --accent: #17140e; --accent-hover: #6a4fe0; --accent-subtle: rgba(23,20,14,0.06);
+      --green: #2e6b4f; --green-subtle: rgba(46,107,79,0.08);
+      --radius: 6px;
       --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Segoe UI", Roboto, sans-serif;
-      --font-mono: "SF Mono", Menlo, "Cascadia Code", "Fira Code", monospace;
-      --font-display: 'Orbitron', "PingFang TC", "Noto Sans TC", sans-serif;
+      --font-mono: "SF Mono", ui-monospace, Menlo, "Cascadia Code", monospace;
     }
     [data-theme="dark"] {
       --bg: #0c0930;
@@ -27,13 +22,11 @@
         radial-gradient(120% 95% at 82% 8%, rgba(96,74,236,0.50), transparent 55%),
         radial-gradient(110% 85% at 12% 88%, rgba(64,44,178,0.45), transparent 60%),
         radial-gradient(150% 130% at 50% 45%, #251b70 0%, #160f49 46%, #0b0830 100%);
-      --surface: #171058; --surface-warm: rgba(255,255,255,0.06);
-      --border: rgba(255,255,255,0.28); --border-subtle: rgba(255,255,255,0.13);
+      --surface: rgba(255,255,255,0.05); --surface-warm: rgba(255,255,255,0.06);
+      --hairline: rgba(255,255,255,0.3); --hairline-soft: rgba(255,255,255,0.14);
       --text: #ffffff; --text-secondary: rgba(233,230,255,0.85); --text-muted: rgba(255,255,255,0.52);
-      --accent: #b9a8ff; --accent-hover: #d9d0ff; --accent-subtle: rgba(150,128,255,0.16);
+      --accent: #ffffff; --accent-hover: #b9a8ff; --accent-subtle: rgba(150,128,255,0.16);
       --green: #4fd2ff; --green-subtle: rgba(79,210,255,0.13);
-      --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.45);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -41,86 +34,138 @@
       background-color: var(--bg); background-image: var(--bg-image);
       background-attachment: fixed;
       color: var(--text);
-      line-height: 1.75; min-height: 100vh;
-      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      line-height: 1.8; min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    a { color: var(--accent); text-decoration: none; transition: color .15s ease; }
-    a:hover { color: var(--accent-hover); }
+    a { color: inherit; text-decoration: none; }
 
-    .header {
-      border-bottom: 1px solid var(--border); padding: 12px 24px;
-      position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(12px);
-      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    /* ===== 頂部導覽（全站統一 menubar）===== */
+    .topnav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px clamp(20px, 4vw, 56px) 16px;
+      border-bottom: 1px solid var(--hairline);
+      position: sticky; top: 0; z-index: 100;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
     }
-    .header-top {
-      display: flex; justify-content: space-between; align-items: center;
-      max-width: 720px; margin: 0 auto; gap: 12px;
+    .wordmark {
+      font-family: var(--font-mono); font-weight: 700; font-size: 15px;
+      letter-spacing: .14em; white-space: nowrap;
     }
-    .back-link { font-size: 12px; color: var(--text-muted); font-family: var(--font-mono); }
-    .controls { display: flex; gap: 8px; align-items: center; }
-    .controls button {
-      font-family: var(--font-sans); font-size: 13px; cursor: pointer;
-      background: var(--surface-warm); color: var(--text-secondary);
-      border: 1px solid var(--border); border-radius: var(--radius-sm);
-      padding: 6px 12px; transition: all .15s ease;
+    .wordmark b { opacity: .5; font-weight: 700; }
+    .topnav-links {
+      display: flex; align-items: center; gap: clamp(14px, 2.6vw, 36px);
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: .2em;
     }
-    .controls button:hover { border-color: var(--accent); color: var(--accent); }
+    .topnav-links a {
+      color: var(--text-secondary); padding-bottom: 3px;
+      border-bottom: 1px solid transparent; transition: .2s; text-transform: uppercase;
+    }
+    .topnav-links a:hover { color: var(--text); border-bottom-color: var(--text); }
+    /* dark mode toggle（軌道 + 圓鈕；dark 時鈕滑右）*/
+    .mode-toggle {
+      position: relative; width: 40px; height: 20px; flex-shrink: 0;
+      border-radius: 999px; border: 1px solid var(--hairline);
+      background: none; cursor: pointer; padding: 0; transition: .2s;
+    }
+    .mode-toggle::after {
+      content: ""; position: absolute; top: 2px; left: 2px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--text-secondary); transition: transform .25s, background .25s;
+    }
+    .mode-toggle:hover { border-color: var(--text); }
+    [data-theme="dark"] .mode-toggle::after { transform: translateX(20px); background: var(--text); }
 
-    main { max-width: 720px; margin: 0 auto; padding: 32px 24px 40px; }
+    /* 語言 dropdown（mono pill + chevron）*/
+    .lang-select { position: relative; display: inline-flex; align-items: center; }
+    .lang-select select {
+      appearance: none; -webkit-appearance: none;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em;
+      background: none; border: 1px solid var(--hairline); border-radius: 999px;
+      color: var(--text-secondary); padding: 4px 26px 4px 12px;
+      cursor: pointer; transition: .2s;
+    }
+    .lang-select select:hover { border-color: var(--text); color: var(--text); }
+    .lang-select::after {
+      content: "▾"; position: absolute; right: 10px; pointer-events: none;
+      font-size: 10px; color: var(--text-muted);
+    }
+    .lang-select select option { color: #17140e; background: #fff; }
+
+    main { max-width: 760px; margin: 0 auto; padding: 40px clamp(20px, 4vw, 56px) 60px; }
+
+    .back-link {
+      display: inline-block; font-size: 11px; color: var(--text-muted);
+      font-family: var(--font-mono); letter-spacing: .12em; margin-bottom: 26px;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--text); }
 
     .kicker {
-      font-family: var(--font-display); font-size: 11px; color: var(--accent);
-      letter-spacing: .3em; text-transform: uppercase; margin-bottom: 8px; font-weight: 800;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: .3em; text-transform: uppercase;
+      margin-bottom: 12px;
     }
-    .title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 20px; }
-    h1 { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: 0.01em; line-height: 1.35; }
+    .title-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 26px; }
+    h1 {
+      font-size: clamp(26px, 4vw, 34px); font-weight: 700;
+      letter-spacing: .005em; line-height: 1.4; text-wrap: balance;
+    }
     .refs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
     .ref-link {
-      font-family: var(--font-mono); font-size: 12px;
-      background: var(--accent-subtle); color: var(--accent);
-      border: 1px solid var(--border); border-radius: 999px; padding: 3px 11px;
-      white-space: nowrap; transition: all .15s ease;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: .04em;
+      color: var(--text-secondary);
+      border: 1px solid var(--hairline); border-radius: 999px; padding: 3px 12px;
+      white-space: nowrap; transition: .2s;
     }
-    .ref-link:hover { background: var(--accent); color: var(--surface); border-color: var(--accent); }
+    .ref-link:hover { border-color: var(--text); color: var(--text); }
 
     article h2 {
-      font-size: 15px; font-weight: 700; color: var(--accent);
-      margin: 26px 0 8px; padding-left: 11px; border-left: 3px solid var(--accent);
+      font-family: var(--font-mono);
+      font-size: 13px; font-weight: 700; color: var(--text);
+      letter-spacing: .18em; text-transform: uppercase;
+      margin: 40px 0 12px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--hairline);
     }
-    article p { margin: 10px 0; color: var(--text-secondary); }
+    article p { margin: 12px 0; color: var(--text-secondary); font-size: 15.5px; }
     article p strong, article li strong { color: var(--text); font-weight: 650; }
-    article ol, article ul { margin: 8px 0 8px 4px; padding-left: 22px; }
-    article li { margin: 7px 0; color: var(--text-secondary); }
+    article ol, article ul { margin: 10px 0 10px 4px; padding-left: 24px; }
+    article li { margin: 9px 0; color: var(--text-secondary); font-size: 15.5px; }
+    article li::marker { font-family: var(--font-mono); color: var(--text-muted); }
     article blockquote {
-      border-left: 3px solid var(--green); background: var(--green-subtle);
-      border-radius: var(--radius-sm); padding: 12px 16px; margin: 14px 0;
-      color: var(--text-secondary); font-size: 14px;
+      border-left: 2px solid var(--green); background: var(--green-subtle);
+      border-radius: 0 var(--radius) var(--radius) 0; padding: 12px 18px; margin: 16px 0;
+      color: var(--text-secondary); font-size: 14.5px;
     }
     .signal {
       display: inline-block; font-family: var(--font-mono); font-size: 12px;
       color: var(--green); background: var(--green-subtle);
-      border-radius: var(--radius-sm); padding: 2px 9px; margin: 4px 0;
+      border-radius: 999px; padding: 2px 12px; margin: 4px 0;
     }
     .prevnext {
       display: flex; justify-content: space-between; gap: 12px;
-      margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border);
-      font-size: 13px; font-family: var(--font-mono);
+      margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--hairline);
+      font-size: 12px; font-family: var(--font-mono); letter-spacing: .04em;
     }
+    .prevnext a { color: var(--text-secondary); transition: color .2s; }
+    .prevnext a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 4px; }
     .prevnext span { color: var(--text-muted); }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="header-top">
-      <a href="{{DETAIL_DIGEST_LINK}}" class="back-link" {{L10N_ATTRS:backToDigest}}>{{L10N:backToDigest}}</a>
-      <div class="controls">
-        <button class="theme-btn" onclick="toggleTheme()">🌓</button>
-        <button class="lang-btn" onclick="toggleLang()">{{L10N_LANG_TOGGLE}}</button>
-      </div>
+  <nav class="topnav">
+    <a class="wordmark" href="./index.html">NO MORE <b>AI</b> FOMO</a>
+    <div class="topnav-links">
+      <a href="./index.html">HOME</a>
+      <a href="./archive.html">ARCHIVE</a>
+      <button class="mode-toggle" id="themeToggle" onclick="toggleTheme()"
+        role="switch" aria-label="Dark mode"></button>
+      <span class="lang-select"><select id="langSelect"
+        onchange="switchLang(this.value)" aria-label="Language"></select></span>
     </div>
-  </div>
+  </nav>
   <main>
+    <a href="{{DETAIL_DIGEST_LINK}}" class="back-link" {{L10N_ATTRS:backToDigest}}>{{L10N:backToDigest}}</a>
     <div class="kicker">{{DETAIL_KICKER}}</div>
     <div class="title-row">
       <h1>{{DETAIL_TITLE}}</h1>
@@ -134,9 +179,12 @@
       var html = document.documentElement;
       var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       html.setAttribute('data-theme', next);
+      var t = document.getElementById('themeToggle');
+      if (t) t.setAttribute('aria-checked', next === 'dark');
       try { localStorage.setItem('fomo-theme', next); } catch(e) {}
     }
     var LOCALES = {{L10N_LOCALES}};
+    var LANG_NAMES = { '中': '中文', 'EN': 'ENGLISH' };
     function splitLocale(base) {
       for (var i = 0; i < LOCALES.length; i++) {
         var suf = LOCALES[i].suffix;
@@ -147,14 +195,15 @@
         if (LOCALES[j].suffix === '') return { idx: j, stem: base };
       return { idx: 0, stem: base };
     }
-    function toggleLang() {
+    function switchLang(idx) {
+      idx = +idx;
       var f = window.location.pathname.split('/').pop().replace(/\.html$/, '');
       var m = f.match(/^(.*?)--(.*)$/);
       var base = m ? m[1] : f;
       var rest = m ? '--' + m[2] : '';
       var cur = splitLocale(base);
-      var next = LOCALES[(cur.idx + 1) % LOCALES.length];
-      window.location.href = './' + cur.stem + next.suffix + rest + '.html';
+      if (idx === cur.idx || !LOCALES[idx]) return;
+      window.location.href = './' + cur.stem + LOCALES[idx].suffix + rest + '.html';
     }
     function setLang(lang) {
       document.documentElement.setAttribute('data-lang', lang);
@@ -167,9 +216,22 @@
       var t, l;
       try { t = localStorage.getItem('fomo-theme'); l = localStorage.getItem('fomo-lang'); } catch(e) {}
       if (t) document.documentElement.setAttribute('data-theme', t);
-      else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        document.documentElement.setAttribute('data-theme', 'dark');
+      var tg = document.getElementById('themeToggle');
+      if (tg) tg.setAttribute('aria-checked',
+        document.documentElement.getAttribute('data-theme') === 'dark');
       setLang(l || document.documentElement.getAttribute('data-lang') || 'zh');
+
+      /* 語言 dropdown：現時 locale 預選 */
+      var f = window.location.pathname.split('/').pop().replace(/\.html$/, '');
+      var m = f.match(/^(.*?)--(.*)$/);
+      var cur = splitLocale(m ? m[1] : f);
+      var sel = document.getElementById('langSelect');
+      if (sel) {
+        sel.innerHTML = LOCALES.map(function(lo, i) {
+          return '<option value="' + i + '"' + (i === cur.idx ? ' selected' : '') + '>' +
+            (LANG_NAMES[lo.label] || lo.label) + '</option>';
+        }).join('');
+      }
     })();
   </script>
 </body>

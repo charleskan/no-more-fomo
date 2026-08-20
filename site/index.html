@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -72,6 +72,19 @@ html,body{height:100%;margin:0;overflow:hidden;background:#0c0930;
 .topnav-links a:hover{color:#fff;border-bottom-color:#fff}
 .topnav-date{color:rgba(255,255,255,.5);font-family:var(--mono);
   font-size:12px;letter-spacing:.22em}
+/* dark mode toggle（軌道 + 圓鈕；dark 時鈕滑右）*/
+.mode-toggle{position:relative;width:40px;height:20px;flex-shrink:0;
+  border-radius:999px;border:1px solid rgba(255,255,255,.4);
+  background:none;cursor:pointer;padding:0;transition:.2s}
+.mode-toggle::after{content:"";position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;
+  background:rgba(255,255,255,.85);transition:transform .25s, background .25s;
+  transform:translateX(20px)}
+.mode-toggle:hover{border-color:#fff}
+[data-theme="light"] .mode-toggle{border-color:rgba(23,20,14,.35)}
+[data-theme="light"] .mode-toggle::after{transform:translateX(0);
+  background:rgba(23,20,14,.7)}
+[data-theme="light"] .mode-toggle:hover{border-color:#17140e}
 
 /* 內容框：只佔中間可視嘅 100vh（頂部讓開 menubar） */
 .frame{position:absolute;left:0;top:var(--bleed);width:100%;
@@ -158,6 +171,46 @@ a.row:hover,a.row:focus-visible{background:rgba(255,255,255,.09);outline:none}
   .page-title{font-size:clamp(32px,6.5vh,64px)}
   .mega{font-size:clamp(36px,11vw,120px)}
 }
+
+/* ═══ Light mode（cream，同 digest 頁同一套 fomo-theme key）═══ */
+[data-theme="light"]{--line:rgba(23,20,14,.22)}
+[data-theme="light"] body,[data-theme="light"] html{background:#f5f2ea;color:#17140e}
+[data-theme="light"] .bg{background:
+  radial-gradient(120% 95% at 82% 8%, rgba(150,130,255,.16), transparent 55%),
+  radial-gradient(110% 85% at 12% 88%, rgba(106,79,224,.10), transparent 60%),
+  radial-gradient(150% 130% at 50% 45%, #efeadf 0%, #f5f2ea 46%, #f2eee4 100%)}
+[data-theme="light"] .bg::before{background:
+   linear-gradient(114deg, transparent 30%, rgba(120,100,235,.07) 41%, transparent 50%),
+   linear-gradient(118deg, transparent 54%, rgba(150,130,255,.05) 65%, transparent 74%),
+   linear-gradient(112deg, transparent 12%, rgba(90,80,220,.05) 20%, transparent 27%)}
+[data-theme="light"] .tint{background:linear-gradient(180deg, rgba(120,110,240,.03), rgba(60,50,30,.05) 88%);
+  box-shadow:inset 0 0 0 1px rgba(23,20,14,.05),
+             inset 3px 0 18px rgba(120,100,235,.05),
+             inset -3px 0 18px rgba(60,50,30,.06)}
+[data-theme="light"] .page-title,[data-theme="light"] .mega{color:#17140e;
+  text-shadow:0 4px 30px rgba(90,70,255,.12)}
+[data-theme="light"] .kicker{color:rgba(23,20,14,.6)}
+[data-theme="light"] .logo26{color:#17140e}
+[data-theme="light"] .logo26 i{background:#17140e}
+[data-theme="light"] .g-head{background:rgba(23,20,14,.06);color:#17140e}
+[data-theme="light"] .cols{color:rgba(23,20,14,.75)}
+[data-theme="light"] .row{color:#17140e}
+[data-theme="light"] a.row:hover,[data-theme="light"] a.row:focus-visible{background:rgba(23,20,14,.06)}
+[data-theme="light"] .s-foot{color:rgba(23,20,14,.75)}
+[data-theme="light"] .mega-sub a{color:#17140e;border-color:rgba(23,20,14,.4);
+  background:rgba(255,255,255,.55)}
+[data-theme="light"] .mega-sub a:hover,[data-theme="light"] .mega-sub a:focus-visible{
+  background:rgba(23,20,14,.08);border-color:#17140e}
+[data-theme="light"] .topnav{border-bottom-color:rgba(23,20,14,.3)}
+[data-theme="light"] .wordmark{color:#17140e}
+[data-theme="light"] .topnav-links a{color:rgba(23,20,14,.65)}
+[data-theme="light"] .topnav-links a:hover{color:#17140e;border-bottom-color:#17140e}
+[data-theme="light"] .topnav-date{color:rgba(23,20,14,.45)}
+[data-theme="light"] .ui .nav{color:#17140e;border-color:rgba(23,20,14,.35);
+  background:rgba(255,255,255,.55)}
+[data-theme="light"] .ui .nav:hover,[data-theme="light"] .ui .nav:focus-visible{
+  background:rgba(23,20,14,.1);border-color:#17140e}
+[data-theme="light"] .hint{color:rgba(23,20,14,.4)}
 </style>
 </head>
 <body>
@@ -170,6 +223,8 @@ a.row:hover,a.row:focus-visible{background:rgba(255,255,255,.09);outline:none}
     <span class="topnav-date" id="nav-date"></span>
     <a id="nav-digest" href="archive.html">TODAY'S DIGEST</a>
     <a href="archive.html">ARCHIVE</a>
+    <button class="mode-toggle" id="themeToggle" onclick="toggleTheme()"
+      role="switch" aria-label="Dark mode"></button>
   </div>
 </nav>
 
@@ -218,6 +273,23 @@ const BADGE_COLORS = [
   { c: '#a98c5d', fg: '#141414' }, { c: '#0d0d0d', fg: '#18cfd4' },
   { c: '#1f66e5' }, { c: '#04a24c' }, { c: '#c4344b' },
 ];
+
+/* theme：同 digest 頁共用 fomo-theme key（homepage 預設 dark）。
+   toggle 狀態由 CSS 按 data-theme 反映 */
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  const t = document.getElementById('themeToggle');
+  if (t) t.setAttribute('aria-checked', next === 'dark');
+  try { localStorage.setItem('fomo-theme', next); } catch (e) {}
+}
+try {
+  const saved = localStorage.getItem('fomo-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+} catch (e) {}
+document.getElementById('themeToggle')?.setAttribute('aria-checked',
+  document.documentElement.getAttribute('data-theme') === 'dark');
 
 const swiperEl = document.querySelector('.swiper');
 const wrap = swiperEl.querySelector('.swiper-wrapper');
