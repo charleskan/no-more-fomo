@@ -34,6 +34,7 @@ fi
 aws s3 sync "$SRC/" "s3://$BUCKET/" \
   --exclude "*" --include "*.html" \
   --content-type "text/html; charset=utf-8" \
+  --cache-control "no-cache" \
   --no-progress
 
 # --- Homepage (site/index.html) + daily data (data/*.json) ---
@@ -41,7 +42,7 @@ aws s3 sync "$SRC/" "s3://$BUCKET/" \
 : "${SITE_SRC:=$(cd "$(dirname "$0")/../site" 2>/dev/null && pwd)}"
 if [ -n "$SITE_SRC" ] && [ -f "$SITE_SRC/index.html" ]; then
   aws s3 cp "$SITE_SRC/index.html" "s3://$BUCKET/index.html" \
-    --content-type "text/html; charset=utf-8" --no-progress
+    --content-type "text/html; charset=utf-8" --cache-control "no-cache" --no-progress
 fi
 DATA_DIR=""
 [ -d "$SRC/data" ] && DATA_DIR="$SRC/data"
@@ -50,6 +51,7 @@ if [ -n "$DATA_DIR" ]; then
   aws s3 sync "$DATA_DIR/" "s3://$BUCKET/data/" \
     --exclude "*" --include "*.json" \
     --content-type "application/json; charset=utf-8" \
+    --cache-control "no-cache" \
     --no-progress
 fi
 
